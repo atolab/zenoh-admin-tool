@@ -1,0 +1,153 @@
+<!-- 
+  Copyright (c) 2017, 2020 ADLINK Technology Inc.
+ 
+  This program and the accompanying materials are made available under the
+  terms of the Eclipse Public License 2.0 which is available at
+  http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+  which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ 
+  SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ 
+  Contributors:
+    ADLINK zenoh team, <zenoh@adlink-labs.tech>
+-->
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/v4-shims.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/7.0.4/jsoneditor.min.js"></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.2.1/mustache.min.js'></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/purl/2.3.1/purl.min.js"></script>
+  <script src="admin.js"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/7.0.4/jsoneditor.min.css">
+</head>
+
+<body>
+  <div>
+    <div class="w3-bar w3-theme-d1">
+      <div class="w3-bar-item w3-large"><i class="fas fa-dragon" style="transform: scaleX(-1)"></i></div>
+      <div class="w3-bar-item w3-large">Zenoh Administration Space</div>
+      <div class="w3-bar-item w3-small w3-right w3-round-xxlarge w3-theme-l3" style="margin:5px">
+        <span id="router-address" class="w3-margin-right w3-hide"></span>
+        <a href="?"><i class="fas fa-power-off"></i></a>
+      </div>
+    </div>
+  </div>
+  <div id="connect-dialog" title="Connect to zenoh router">
+    <form id="connect-form">
+      <label>Router address</label>
+      <input name="url" value="http://localhost:8000" class="w3-input w3-border w3-round"></input>
+      <input type="submit" value="Connect"
+        class="w3-button w3-round w3-border w3-padding-small w3-theme-d1 w3-right w3-section">
+    </form>
+  </div>
+  <div style="position:relative">
+    <div id="router-panel" class="w3-sidebar w3-card" style="right:0;width:0">
+      <div class="w3-bar w3-theme-d1">
+        <button onclick="location.href='#'" class="w3-bar-item w3-button w3-large">
+          <i class="fa fa-close"></i>
+        </button>
+        <div id="router-panel-title" class="w3-bar-item w3-large">
+          Router <span id="router-panel-title-pid"></span>
+        </div>
+      </div>
+      <div id="router-panel-tabs" class="">
+        <ul>
+          <li><a href="#router-panel-info-tab">Info</a></li>
+          <li><a href="#router-panel-storages-tab">Storages</a></li>
+        </ul>
+        <div id="router-panel-info-tab">
+        </div>
+        <div id="router-panel-storages-tab">
+          <div id="router-panel-storages-panel">
+          </div>
+          <script id="backend_list_item" type="x-tmpl-mustache">
+            <div id="backend_{{be_name}}" class="backend w3-card w3-section">
+              <h3>{{be_name}}</h3>
+              <div id="backend_{{be_name}}_content" class="w3-padding-small"></div>
+            </div>
+          </script>
+          <script id="storages_list_item" type="x-tmpl-mustache">
+            <div class="storage w3-card">
+              <div class="w3-bar w3-padding-small">
+                <div class="w3-bar-item w3-padding-small"><i class="fas fa-server"></i></div>
+                <div class="w3-col s3 w3-padding-small">{{name}}</div>
+                <div class="w3-col s7 w3-padding-small w3-monospace">{{path_expr}}</div>
+                <button onclick="delete_storage('{{key}}')" class="w3-button w3-padding-small w3-border w3-round w3-theme-d1 w3-bar-item w3-right">delete</button>
+              </div>
+              <div class="w3-padding w3-monospace">
+                {{{properties}}}
+              </div>
+            </div>
+          </script>
+          <script id="add_storage_item" type="x-tmpl-mustache">
+            <div class="w3-card w3-round w3-section">
+              <div class="w3-padding w3-border-bottom">Create storage</div>
+              <form id="create_{{backend}}_storage" class="w3-container w3-section">
+                <div class="w3-row">
+                  <div class="w3-col s3">
+                    <label>Name</label>
+                    <input id="{{pid}}_{{backend}}_name" name="{{pid}}_{{backend}}_name" placeholder="name" class="w3-input w3-border w3-round"></input>
+                  </div>
+                  <div class="w3-col s9" style="padding-left:8px">
+                    <label>Path</label>
+                    <input id="{{pid}}_{{backend}}_path" name="{{pid}}_{{backend}}_path" placeholder="/path/to/store/**" class="w3-input w3-border w3-round"></input>
+                  </div>
+                  <label>Properties</label>
+                  <textarea id="{{pid}}_{{backend}}_props" name="{{pid}}_{{backend}}_props" placeholder="key=value" rows="3" class="w3-input w3-border w3-round w3-padding-small" type="text"></textarea>
+                </div>
+                <input type="submit" value="Create" class="w3-button w3-round w3-border w3-padding-small w3-theme-d1 w3-right w3-section">
+              </form>
+            </div>
+          </script>
+          <script id="load_backend_item" type="x-tmpl-mustache">
+            <div class="w3-card w3-round w3-section">
+              <div class="w3-padding w3-border-bottom">Load backend</div>
+              <form id="load_backend" class="w3-container w3-section">
+                <input id="load_backend_pid" name="load_backend_pid" type="hidden" value="{{pid}}">
+                <label>Name</label>
+                <input id="load_backend_name" name="load_backend_name" placeholder="name" class="w3-input w3-border w3-round w3-padding-small" type="text">
+                <label>Properties</label>
+                <textarea id="load_backend_props" name="load_backend_props" placeholder="key=value" rows="3" class="w3-input w3-border w3-round w3-padding-small" type="text"></textarea>
+                <input type="submit" value="Load" class="w3-button w3-round w3-border w3-padding-small w3-theme-d1 w3-right w3-section">
+              </form>
+            </div>
+          </script>
+        </div>
+      </div>
+    </div>
+
+    <!-- <div class="w3-show-inline-block w3-margin">
+      <div class="w3-bar w3-round w3-border">
+        <button class="w3-bar-item w3-button w3-theme-d1" style="width:120px"><i
+            class="fa fa-bars"></i>&nbsp;list</button>
+        <button class="w3-bar-item w3-button" style="width:120px"><i
+            class="fas fa-project-diagram"></i>&nbsp;graph</button>
+      </div>
+    </div> -->
+    <ul id="routers-list" class="w3-ul  w3-hoverable w3-card-4">
+    </ul>
+    <script id="routers_list_item" type="x-tmpl-mustache">
+      <li id="{{pid}}" class="w3-bar" style="cursor:pointer" onclick="location.href='#{{pid}}'">
+        <div class="w3-bar-item w3-hide-small">
+          <span class="w3-large">Router</span><br>
+        </div>
+        <div class="w3-bar-item">
+          <span>{{pid}}</span><br>
+          <span class="w3-small">locators: {{locators}}</span>
+        </div>
+      </li>
+    </script>
+  </div>
+
+</body>
+
+</html>
