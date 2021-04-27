@@ -39,13 +39,13 @@ function update_router_panel(pid) {
   $("#" + pid).addClass("w3-theme-d1");
   $("#router-panel-title-pid").html(pid);
   update_storages_panel(pid);
-  $.getJSON("http://localhost:8000/@/router/" + pid, zRouter => {
+  $.getJSON($.url().param('url') + "/@/router/" + pid, zRouter => {
     routereditor.update(zRouter[0].value);
   });
 }
 
 function update_storages_panel(pid) {
-  $.getJSON("http://localhost:8000/@/router/" + pid + "/plugin/storages/backend/*", zBackends => {
+  $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/*", zBackends => {
     $("#router-panel-storages-panel").html(
       zBackends.map(be => {
         return Mustache.render($('#backend_list_item').html(), { be_name: be.key.split('/').reverse()[0] })
@@ -56,7 +56,7 @@ function update_storages_panel(pid) {
     );
     $("#load_backend").submit(function (event) {
       $.ajax({
-        url: "http://localhost:8000/@/router/" + $('#load_backend_pid').val() + "/plugin/storages/backend/" + $('#load_backend_name').val(),
+        url: $.url().param('url') + "/@/router/" + $('#load_backend_pid').val() + "/plugin/storages/backend/" + $('#load_backend_name').val(),
         type: 'PUT',
         headers: { "content-type": "application/properties" },
         data: $('#load_backend_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""),
@@ -79,7 +79,7 @@ function update_storages_panel(pid) {
 }
 
 function update_backend_panel(pid, backend) {
-  $.getJSON("http://localhost:8000/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/*", zStorages => {
+  $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/*", zStorages => {
     $("#backend_" + backend + "_content").html(
       zStorages.map(sto => {
         console.log(JSON.stringify(sto.value, null, " "));
@@ -117,7 +117,7 @@ function update_backend_panel(pid, backend) {
 
 function delete_storage(sto) {
   $.ajax({
-    url: "http://localhost:8000" + sto,
+    url: $.url().param('url') + sto,
     type: 'DELETE',
     success: function (rep) {
       setTimeout(function () { update_backend_panel(sto.split('/')[3], sto.split('/')[7]); }, 200);
@@ -127,7 +127,7 @@ function delete_storage(sto) {
 
 function create_storage(pid, backend, name, properties) {
   $.ajax({
-    url: "http://localhost:8000/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/" + name,
+    url: $.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/" + name,
     type: 'PUT',
     headers: { "content-type": "application/properties" },
     data: properties,
