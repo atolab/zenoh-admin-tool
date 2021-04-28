@@ -15,6 +15,14 @@
 
 var routereditor;
 
+function failure() {
+  close_router_panel();
+  $("#connection_status").removeClass("w3-theme-l3");
+  $("#connection_status").addClass("w3-orange");
+  $("#status_bar").removeClass("w3-hide");
+  $("#main").addClass("w3-opacity-max");
+}
+
 function open_router_panel() {
   if ($("#router-panel").css("width") == "0px") {
     $("#router-panel").css("transition", "0.3s");
@@ -41,7 +49,7 @@ function update_router_panel(pid) {
   update_storages_panel(pid);
   $.getJSON($.url().param('url') + "/@/router/" + pid, zRouter => {
     routereditor.update(zRouter[0].value);
-  });
+  }).fail(function () { failure(); });
 }
 
 function update_storages_panel(pid) {
@@ -63,7 +71,7 @@ function update_storages_panel(pid) {
         success: function (rep) {
           setTimeout(function () { update_storages_panel(pid); }, 200);
         },
-      });
+      }).fail(function () { failure(); });
       event.preventDefault();
     });
     zBackends.forEach(be => {
@@ -75,7 +83,7 @@ function update_storages_panel(pid) {
       collapsible: "true",
       heightStyle: "content"
     });
-  });
+  }).fail(function () { failure(); });
 }
 
 function update_backend_panel(pid, backend) {
@@ -112,7 +120,7 @@ function update_backend_panel(pid, backend) {
       icons: false,
     });
     $(".storage button").click(function (e) { e.stopPropagation() });
-  });
+  }).fail(function () { failure(); });
 }
 
 function delete_storage(sto) {
@@ -122,7 +130,7 @@ function delete_storage(sto) {
     success: function (rep) {
       setTimeout(function () { update_backend_panel(sto.split('/')[3], sto.split('/')[7]); }, 200);
     },
-  });
+  }).fail(function () { failure(); });
 }
 
 function create_storage(pid, backend, name, properties) {
@@ -134,10 +142,11 @@ function create_storage(pid, backend, name, properties) {
     success: function (rep) {
       setTimeout(function () { update_backend_panel(pid, backend); }, 200);
     },
-  });
+  }).fail(function () { failure(); });
 }
 
 $(document).ready(function () {
+  console.log("READY");
   $("#connect-dialog").dialog({ autoOpen: false });
   if (typeof $.url().param('url') === 'undefined') {
     $("#connect-dialog").dialog('open');
@@ -161,7 +170,7 @@ $(document).ready(function () {
           { pid: srv.value.pid, locators: srv.value.locators }
         ))
       );
-    })
+    }).fail(function () { failure(); });
 
     window.onhashchange();
   }
