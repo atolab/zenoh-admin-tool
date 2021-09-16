@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2017, 2020 ADLINK Technology Inc.
  *
@@ -16,40 +15,49 @@
 var routereditor;
 
 function failure() {
-  close_router_panel();
   $("#connection_status").removeClass("w3-theme-l3");
   $("#connection_status").addClass("w3-orange");
   $("#status_bar").removeClass("w3-hide");
   $("#main").addClass("w3-opacity-max");
 }
 
-function open_router_panel() {
-  if ($("#router-panel").css("width") == "0px") {
-    $("#router-panel").css("transition", "0.3s");
-    if ($(window).width() > 1280) {
-      $("#router-panel").css("width", ($(window).width() - 640) + "px");
-    } else if ($(window).width() > 640) {
-      $("#router-panel").css("width", "640px");
-    } else {
-      $("#router-panel").css("width", "100%");
-    }
-  }
+function show_graph_panel() {
+  $("#routers-list").css("display", "none");
+  $("#routers-list-btn").removeClass("w3-theme-d1");
+  $("#routers-graph").css("display", "block");
+  $("#routers-graph-btn").addClass("w3-theme-d1");
 }
 
-function close_router_panel() {
-  $("#router-panel").css("transition", "0.3s");
-  $("#router-panel").css("width", "0px");
+function show_list_panel() {
+  $("#routers-graph").css("display", "none");
+  $("#routers-graph-btn").removeClass("w3-theme-d1");
+  $("#routers-list").css("display", "block");
+  $("#routers-list-btn").addClass("w3-theme-d1");
+}
+
+function select_router(pid) {
   $("#routers-list").children().removeClass("w3-theme-d1");
+  $("#" + pid).addClass("w3-theme-d1");
+  update_router_panel(pid);
+  select_router_node(pid);
 }
 
 function update_router_panel(pid) {
-  $("#routers-list").children().removeClass("w3-theme-d1");
-  $("#" + pid).addClass("w3-theme-d1");
-  $("#router-panel-title-pid").html(pid);
-  update_storages_panel(pid);
-  $.getJSON($.url().param('url') + "/@/router/" + pid, zRouter => {
-    routereditor.update(zRouter[0].value);
-  }).fail(function () { failure(); });
+  if (pid) {
+    $("#router-panel-title").html("Router " + pid);
+    $("#router-panel-tabs").css("display", "block");
+    $("#router-panel-tabs-empty").css("display", "none");
+    update_storages_panel(pid);
+    $.getJSON($.url().param('url') + "/@/router/" + pid, zRouter => {
+      if (zRouter[0].value) {
+        routereditor.update(zRouter[0].value);
+      }
+    }).fail(function () { failure(); });
+  } else {
+    $("#router-panel-title").html("");
+    $("#router-panel-tabs").css("display", "none");
+    $("#router-panel-tabs-empty").css("display", "block");
+  }
 }
 
 function update_storages_panel(pid) {
@@ -145,11 +153,41 @@ function create_storage(pid, backend, name, properties) {
   }).fail(function () { failure(); });
 }
 
+function changehash(view, pid) {
+  if (pid) {
+    location.href='#' + view + ':' + pid;
+  } else {
+    location.href='#' + view + ':';
+  }
+}
+
 $(document).ready(function () {
-  console.log("READY");
   $("#connect-dialog").dialog({ autoOpen: false });
+  $('#main').jqxSplitter({ width: '100%', height: '100%', panels: [{ size: '60%', min: '20%', collapsible: false }, { size: '40%', min: '0%'}]});
+  $('#main').on('expanded', function (event) {
+    console.log(event);
+    event.owner.splitBarButton.css("display", "none");
+    event.owner.splitBar.css("width", "5px");
+    event.owner.splitBar.css("margin-left", "0px");
+  });
+  $('#main').on('collapsed', function (event) {
+    console.log(event);
+    event.owner.splitBar.css("width", "");
+    event.owner.splitBar.css("margin-left", "-25px");
+    event.owner.splitBarButton.removeClass();
+    event.owner.splitBarButton.addClass("w3-bar-item");
+    event.owner.splitBarButton.addClass("w3-button");
+    event.owner.splitBarButton.addClass("w3-large");
+    event.owner.splitBarButton.addClass("w3-theme-d1");
+    event.owner.splitBarButton.css("display", "block");
+    event.owner.splitBarButton.css("width", "");
+    event.owner.splitBarButton.css("height", "100%");
+    event.owner.splitBarButton.css("top", "0");
+    event.owner.splitBarButton.html("<i class='fas fa-angle-left w3-display-middle'>");
+  });
   if (typeof $.url().param('url') === 'undefined') {
     $("#connect-dialog").dialog('open');
+    window.onhashchange();
   } else {
     $("#router-address").html($.url().param('url'));
     $("#router-address").removeClass('w3-hide');
@@ -163,6 +201,7 @@ $(document).ready(function () {
 
     routereditor = new JSONEditor($('#router-panel-info-tab')[0], { mode: 'view' });
 
+    console.log("GET " + $.url().param('url') + "/@/router/*");
     $.getJSON($.url().param('url') + "/@/router/*", zServices => {
       $("#routers-list").html(
         zServices.map(srv => Mustache.render(
@@ -170,18 +209,19 @@ $(document).ready(function () {
           { pid: srv.value.pid, locators: srv.value.locators }
         ))
       );
-    }).fail(function () { failure(); });
-
-    window.onhashchange();
+      window.onhashchange();
+    }).fail(function () { console.log("failure");failure(); });
   }
 })
 
 window.onhashchange = function () {
-  if ($.url().attr('fragment') !== '') {
-    open_router_panel();
-    update_router_panel($.url().attr('fragment'));
+  split = $.url().attr('fragment').split(':');
+  if (split[0] == "GRAPH") {
+    show_graph_panel();
+    init_graph();
   } else {
-    close_router_panel();
+    show_list_panel();
   }
+  select_router(split[1]);
 }
 
