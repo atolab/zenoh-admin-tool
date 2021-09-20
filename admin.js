@@ -188,6 +188,8 @@ $(document).ready(function () {
   });
   if (typeof $.url().param('url') === 'undefined') {
     $("#connect-dialog").dialog('open');
+    $("#main").addClass("w3-opacity-max");
+    $("#main").css("pointer-events", "none");
     window.onhashchange();
   } else {
     $("#router-address").html($.url().param('url'));
