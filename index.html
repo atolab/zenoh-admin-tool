@@ -75,9 +75,9 @@
       <div id="presentation-selector" style="display:block;">
         <div class="w3-show-inline-block w3-margin">
           <div class="w3-bar w3-round w3-border">
-            <button id="routers-list-btn" onclick="changehash('LIST', $.url().attr('fragment').split(':')[1]);" class="w3-bar-item w3-button w3-theme-d1" style="width:120px"><i
+            <button id="routers-list-btn" onclick="changeHash('LIST', $.url().attr('fragment').split(':')[1]);" class="w3-bar-item w3-button w3-theme-d1" style="width:120px"><i
                 class="fa fa-bars"></i>&nbsp;list</button>
-            <button id="routers-graph-btn" onclick="changehash('GRAPH', $.url().attr('fragment').split(':')[1]);"  class="w3-bar-item w3-button" style="width:120px"><i
+            <button id="routers-graph-btn" onclick="changeHash('GRAPH', $.url().attr('fragment').split(':')[1]);"  class="w3-bar-item w3-button" style="width:120px"><i
                 class="fas fa-project-diagram"></i>&nbsp;graph</button>
           </div>
         </div>
@@ -85,7 +85,7 @@
       <ul id="routers-list" class="w3-ul w3-hoverable w3-card-4" style="overflow-y:auto;">
       </ul>
       <script id="routers_list_item" type="x-tmpl-mustache">
-        <li id="{{pid}}" class="w3-bar" style="cursor:pointer" onclick="changehash('LIST', '{{pid}}');">
+        <li id="{{pid}}" class="w3-bar" style="cursor:pointer" onclick="changeHash('LIST', '{{pid}}');">
           <div class="w3-bar-item w3-hide-small">
             <span class="w3-large">Router</span><br>
           </div>
@@ -132,7 +132,7 @@
                 <div class="w3-bar-item w3-padding-small"><i class="fas fa-server"></i></div>
                 <div class="w3-col s3 w3-padding-small">{{name}}</div>
                 <div class="w3-col s7 w3-padding-small w3-monospace">{{path_expr}}</div>
-                <button onclick="delete_storage('{{key}}')" class="w3-button w3-padding-small w3-border w3-round w3-theme-d1 w3-bar-item w3-right">delete</button>
+                <button onclick="deleteStorage('{{key}}')" class="w3-button w3-padding-small w3-border w3-round w3-theme-d1 w3-bar-item w3-right">delete</button>
               </div>
               <div class="w3-padding w3-monospace">
                 {{{properties}}}

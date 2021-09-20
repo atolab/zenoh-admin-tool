@@ -37,14 +37,14 @@ var options = {
 };
 var network;
 
-function init_graph() {
+function initGraph() {
     if (container === undefined) {
         container = document.getElementById('routers-graph')
         redraw();
     }
 }
 
-function select_router_node(pid) {
+function selectRouterNode(pid) {
     if (network) {
         if (pid) {
             network.selectNodes([pid]);
@@ -133,13 +133,13 @@ function autorefresh() {
 
 function showDetails() {
     if(network && network.getSelectedNodes()[0]) {
-        changehash('GRAPH', network.getSelectedNodes()[0]);
+        changeHash('GRAPH', network.getSelectedNodes()[0]);
     } else {
-        changehash('GRAPH');
+        changeHash('GRAPH');
     }
 }
 
-function resetgraph(){
+function resetGraph(){
     network = new vis.Network(container, data, options);
     network.on("click", showDetails);
     network.on("dragStart", showDetails);
@@ -147,12 +147,12 @@ function resetgraph(){
 
 function redraw() {
     $.getJSON($.url().param('url') + "/@/router/*", zServices => {
-        resetgraph();
+        resetGraph();
         update(transform(zServices));
-        select_router_node($.url().attr('fragment').split(':')[1]);
+        selectRouterNode($.url().attr('fragment').split(':')[1]);
     })
     .fail(() => {
-        resetgraph();
+        resetGraph();
         failure();
     });
 }

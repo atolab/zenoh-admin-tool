@@ -22,33 +22,33 @@ function failure() {
   $("#main").css("pointer-events", "none");
 }
 
-function show_graph_panel() {
+function showGraphPanel() {
   $("#routers-list").css("display", "none");
   $("#routers-list-btn").removeClass("w3-theme-d1");
   $("#routers-graph").css("display", "block");
   $("#routers-graph-btn").addClass("w3-theme-d1");
 }
 
-function show_list_panel() {
+function showListPanel() {
   $("#routers-graph").css("display", "none");
   $("#routers-graph-btn").removeClass("w3-theme-d1");
   $("#routers-list").css("display", "block");
   $("#routers-list-btn").addClass("w3-theme-d1");
 }
 
-function select_router(pid) {
+function selectRouter(pid) {
   $("#routers-list").children().removeClass("w3-theme-d1");
   $("#" + pid).addClass("w3-theme-d1");
-  update_router_panel(pid);
-  select_router_node(pid);
+  updateRouterPanel(pid);
+  selectRouterNode(pid);
 }
 
-function update_router_panel(pid) {
+function updateRouterPanel(pid) {
   if (pid) {
     $("#router-panel-title").html("Router " + pid);
     $("#router-panel-tabs").css("display", "block");
     $("#router-panel-tabs-empty").css("display", "none");
-    update_storages_panel(pid);
+    updateStoragesPanel(pid);
     $.getJSON($.url().param('url') + "/@/router/" + pid, zRouter => {
       if (zRouter[0].value) {
         routereditor.update(zRouter[0].value);
@@ -61,7 +61,7 @@ function update_router_panel(pid) {
   }
 }
 
-function update_storages_panel(pid) {
+function updateStoragesPanel(pid) {
   $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/*", zBackends => {
     $("#router-panel-storages-panel").html(
       zBackends.map(be => {
@@ -78,13 +78,13 @@ function update_storages_panel(pid) {
         headers: { "content-type": "application/properties" },
         data: $('#load_backend_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""),
         success: function (rep) {
-          setTimeout(function () { update_storages_panel(pid); }, 200);
+          setTimeout(function () { updateStoragesPanel(pid); }, 200);
         },
       }).fail(function () { failure(); });
       event.preventDefault();
     });
     zBackends.forEach(be => {
-      update_backend_panel(pid, be.key.split('/').reverse()[0]);
+      updateBackendPanel(pid, be.key.split('/').reverse()[0]);
     });
 
     $(".backend").accordion({
@@ -95,7 +95,7 @@ function update_storages_panel(pid) {
   }).fail(function () { failure(); });
 }
 
-function update_backend_panel(pid, backend) {
+function updateBackendPanel(pid, backend) {
   $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/*", zStorages => {
     $("#backend_" + backend + "_content").html(
       zStorages.map(sto => {
@@ -117,7 +117,7 @@ function update_backend_panel(pid, backend) {
       Mustache.render($('#add_storage_item').html(), { pid: pid, backend: backend })
     );
     $("#create_" + backend + "_storage").submit(function (event) {
-      create_storage(pid, backend, $('#' + pid + '_' + backend + '_name').val(),
+      createStorage(pid, backend, $('#' + pid + '_' + backend + '_name').val(),
         ' path_expr=' + $('#' + pid + '_' + backend + '_path').val() + ';'
         + $('#' + pid + '_' + backend + '_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""));
       event.preventDefault();
@@ -132,29 +132,29 @@ function update_backend_panel(pid, backend) {
   }).fail(function () { failure(); });
 }
 
-function delete_storage(sto) {
+function deleteStorage(sto) {
   $.ajax({
     url: $.url().param('url') + sto,
     type: 'DELETE',
     success: function (rep) {
-      setTimeout(function () { update_backend_panel(sto.split('/')[3], sto.split('/')[7]); }, 200);
+      setTimeout(function () { updateBackendPanel(sto.split('/')[3], sto.split('/')[7]); }, 200);
     },
   }).fail(function () { failure(); });
 }
 
-function create_storage(pid, backend, name, properties) {
+function createStorage(pid, backend, name, properties) {
   $.ajax({
     url: $.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/" + name,
     type: 'PUT',
     headers: { "content-type": "application/properties" },
     data: properties,
     success: function (rep) {
-      setTimeout(function () { update_backend_panel(pid, backend); }, 200);
+      setTimeout(function () { updateBackendPanel(pid, backend); }, 200);
     },
   }).fail(function () { failure(); });
 }
 
-function changehash(view, pid) {
+function changeHash(view, pid) {
   if (pid) {
     location.href='#' + view + ':' + pid;
   } else {
@@ -218,11 +218,11 @@ $(document).ready(function () {
 window.onhashchange = function () {
   split = $.url().attr('fragment').split(':');
   if (split[0] == "GRAPH") {
-    show_graph_panel();
-    init_graph();
+    showGraphPanel();
+    initGraph();
   } else {
-    show_list_panel();
+    showListPanel();
   }
-  select_router(split[1]);
+  selectRouter(split[1]);
 }
 
