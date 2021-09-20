@@ -19,6 +19,7 @@ function failure() {
   $("#connection_status").addClass("w3-orange");
   $("#status_bar").removeClass("w3-hide");
   $("#main").addClass("w3-opacity-max");
+  $("#main").css("pointer-events", "none");
 }
 
 function show_graph_panel() {
