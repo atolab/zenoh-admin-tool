@@ -22,6 +22,14 @@ function failure() {
   $("#main").css("pointer-events", "none");
 }
 
+function cleanFailure() {
+  $("#connection_status").removeClass("w3-orange");
+  $("#connection_status").addClass("w3-theme-l3");
+  $("#status_bar").addClass("w3-hide");
+  $("#main").removeClass("w3-opacity-max");
+  $("#main").css("pointer-events", "auto");
+}
+
 function showGraphPanel() {
   $("#routers-list").css("display", "none");
   $("#routers-list-btn").removeClass("w3-theme-d1");
@@ -62,14 +70,9 @@ function updateRouterPanel(pid) {
 }
 
 function updateStoragesPanel(pid) {
-  $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/*", zBackends => {
-    $("#router-panel-storages-panel").html(
-      zBackends.map(be => {
-        return Mustache.render($('#backend_list_item').html(), { be_name: be.key.split('/').reverse()[0] })
-      }).join('')
-    );
-    $("#router-panel-storages-panel").append(
-      Mustache.render($('#load_backend_item').html(), { pid: pid })
+  if (!$("#backend_list").length) {
+    $("#router-panel-storages-tab").append(
+      Mustache.render($('#backend_list_template').html(), { pid: pid })
     );
     $("#load_backend").submit(function (event) {
       $.ajax({
@@ -83,50 +86,63 @@ function updateStoragesPanel(pid) {
       }).fail(function () { failure(); });
       event.preventDefault();
     });
+  }
+  $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/*", zBackends => {
+    $("#backend_list").children().filter(function(){
+      return !zBackends.some(be => "backend_" + be.key.split('/').reverse()[0] == $(this).attr('id'));
+    }).remove();
+    zBackends.forEach(be => {
+      backend = be.key.split('/').reverse()[0];
+      if (!$("#backend_" + backend).length) {
+        $("#backend_list").append(Mustache.render($('#backend_list_item_template').html(), { backend: backend, pid: pid }));
+        $("#backend_" + backend).accordion({
+          active: "false",
+          collapsible: "true",
+          heightStyle: "content"
+        });
+        $("#create_" + backend + "_storage").submit(function (event) {
+          createStorage(pid, backend, $('#' + pid + '_' + backend + '_name').val(),
+            ' path_expr=' + $('#' + pid + '_' + backend + '_path').val() + ';'
+            + $('#' + pid + '_' + backend + '_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""));
+          event.preventDefault();
+        });
+      }
+    });
     zBackends.forEach(be => {
       updateBackendPanel(pid, be.key.split('/').reverse()[0]);
-    });
-
-    $(".backend").accordion({
-      active: "false",
-      collapsible: "true",
-      heightStyle: "content"
     });
   }).fail(function () { failure(); });
 }
 
 function updateBackendPanel(pid, backend) {
   $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/*", zStorages => {
-    $("#backend_" + backend + "_content").html(
-      zStorages.map(sto => {
-        console.log(JSON.stringify(sto.value, null, " "));
-        return Mustache.render($('#storages_list_item').html(), {
-          name: sto.key.split('/').reverse()[0],
-          path_expr: sto.value.path_expr,
-          key: sto.key,
-          properties: JSON.stringify(sto.value)
-            .replaceAll("{", "")
-            .replaceAll("}", "")
-            .replaceAll("\":\"", " = ")
-            .replaceAll(",", "<br>")
-            .replaceAll("\"", ""),
-        })
-      }).join('')
-    );
-    $("#backend_" + backend + "_content").append(
-      Mustache.render($('#add_storage_item').html(), { pid: pid, backend: backend })
-    );
-    $("#create_" + backend + "_storage").submit(function (event) {
-      createStorage(pid, backend, $('#' + pid + '_' + backend + '_name').val(),
-        ' path_expr=' + $('#' + pid + '_' + backend + '_path').val() + ';'
-        + $('#' + pid + '_' + backend + '_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""));
-      event.preventDefault();
-    });
-    $(".storage").accordion({
-      active: "false",
-      collapsible: "true",
-      heightStyle: "content",
-      icons: false,
+    $("#backend_" + backend + "_storage_list").children().filter(function(){
+      return !zStorages.some(sto => "backend_" + backend + "_storage_" + sto.key.split('/').reverse()[0] == $(this).attr('id'));
+    }).remove();
+    zStorages.forEach( sto => {
+      sto_name = sto.key.split('/').reverse()[0];
+      if (!$("#backend_" + backend + "_storage_" + sto_name).length) {
+        $("#backend_" + backend + "_storage_list").append(
+          Mustache.render($('#storages_list_item_template').html(), {
+            name: sto.key.split('/').reverse()[0],
+            backend: backend,
+            path_expr: sto.value.path_expr,
+            key: sto.key,
+            properties: JSON.stringify(sto.value)
+              .replaceAll("{", "")
+              .replaceAll("}", "")
+              .replaceAll("\":\"", " = ")
+              .replaceAll(",", "<br>")
+              .replaceAll("\"", ""),
+          })
+        );
+        $("#backend_" + backend + "_storage_" + sto_name).accordion({
+          active: "false",
+          collapsible: "true",
+          heightStyle: "content",
+          icons: false,
+        });
+      }
     });
     $(".storage button").click(function (e) { e.stopPropagation() });
   }).fail(function () { failure(); });
@@ -162,17 +178,58 @@ function changeHash(view, pid) {
   }
 }
 
+function updateList(zServices) {
+  zServices.sort(function(a, b) {return a.value.pid.localeCompare(b.value.pid);});
+  $("#routers-list").html(
+    zServices.map(srv => Mustache.render(
+      $('#routers_list_item').html(),
+      { pid: srv.value.pid, locators: srv.value.locators }
+    ))
+  );
+}
+
+function update() {
+  $.getJSON($.url().param('url') + "/@/router/*", zServices => {
+    try {
+      cleanFailure();
+      updateList(zServices);
+      updateGraph(transform(zServices));
+      let pid = $.url().attr('fragment').split(':')[1];
+      if (pid && !zServices.some(srv => srv.value.pid == pid)) {
+        changeHash($.url().attr('fragment').split(':')[0]);
+      } else {
+        window.onhashchange();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+    scheduleUpdate();
+  }).fail(function () { 
+    failure(); 
+    scheduleUpdate();
+  });
+}
+
+function scheduleUpdate() {
+  if ($('#autorefresh-switch').val()) {
+    period = parseInt($('#autorefresh-period').val());
+    if (isNaN(period)) { period = 500; }
+    if (period < 100) { period = 100; }
+    setTimeout(update, period);
+  }
+}
+
 $(document).ready(function () {
   $("#connect-dialog").dialog({ autoOpen: false });
+  $('#autorefresh-switch').jqxSwitchButton({checked:true, height: 30});
+  $('#autorefresh-switch').bind("checked", function(event){ if (typeof $.url().param('url') !== 'undefined') { update(); } });
   $('#main').jqxSplitter({ width: '100%', height: '100%', panels: [{ size: '60%', min: '20%', collapsible: false }, { size: '40%', min: '0%'}]});
   $('#main').on('expanded', function (event) {
-    console.log(event);
     event.owner.splitBarButton.css("display", "none");
     event.owner.splitBar.css("width", "5px");
     event.owner.splitBar.css("margin-left", "0px");
   });
   $('#main').on('collapsed', function (event) {
-    console.log(event);
     event.owner.splitBar.css("width", "");
     event.owner.splitBar.css("margin-left", "-25px");
     event.owner.splitBarButton.removeClass();
@@ -194,26 +251,13 @@ $(document).ready(function () {
   } else {
     $("#router-address").html($.url().param('url'));
     $("#router-address").removeClass('w3-hide');
+    $("#refresh").removeClass('w3-hide');
 
     $("#router-panel-tabs").tabs();
-    $("#router-panel-storages-panel > div").accordion({
-      active: "false",
-      collapsible: "true",
-      heightStyle: "content"
-    });
 
     routereditor = new JSONEditor($('#router-panel-info-tab')[0], { mode: 'view' });
 
-    console.log("GET " + $.url().param('url') + "/@/router/*");
-    $.getJSON($.url().param('url') + "/@/router/*", zServices => {
-      $("#routers-list").html(
-        zServices.map(srv => Mustache.render(
-          $('#routers_list_item').html(),
-          { pid: srv.value.pid, locators: srv.value.locators }
-        ))
-      );
-      window.onhashchange();
-    }).fail(function () { console.log("failure");failure(); });
+    update();
   }
 })
 

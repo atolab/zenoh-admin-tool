@@ -100,35 +100,9 @@ function transform(values) {
     } catch(error){ return {}; }
 }
 
-function update(zServices) {
+function updateGraph(zServices) {
     updateNodes(zServices);
     updateEdges(zServices);
-}
-
-function refresh() {
-    $.getJSON($.url().param('url') + "/@/router/*", zServices => {
-        update(transform(zServices));
-    }).fail(failure);
-}
-
-function autorefresh() {
-    $("#autorefresh").toggleClass("loading");
-    if($("#autorefresh").hasClass("loading"))
-    {
-        function periodicupdate(){
-            $.getJSON("/@/router/*", zServices => {
-                update(transform(zServices));
-            })
-            .fail(() => {
-                failure();
-                if($("#autorefresh").hasClass("loading"))
-                {
-                    setTimeout(periodicupdate, 500);
-                }
-            });
-        }
-        periodicupdate();
-    }
 }
 
 function showDetails() {
@@ -148,7 +122,7 @@ function resetGraph(){
 function redraw() {
     $.getJSON($.url().param('url') + "/@/router/*", zServices => {
         resetGraph();
-        update(transform(zServices));
+        updateGraph(transform(zServices));
         selectRouterNode($.url().attr('fragment').split(':')[1]);
     })
     .fail(() => {

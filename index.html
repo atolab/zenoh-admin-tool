@@ -22,6 +22,7 @@
   <script src="https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jqwidgets/12.1.2/jqwidgets/jqxcore.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jqwidgets/12.1.2/jqwidgets/jqxsplitter.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqwidgets/12.1.2/jqwidgets/jqxswitchbutton.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/v4-shims.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/7.0.4/jsoneditor.min.js"></script>
@@ -50,7 +51,11 @@
       <div class="w3-bar-item w3-large">Zenoh Administration Space</div>
       <div id="connection_status" class="w3-bar-item w3-small w3-right w3-round-xxlarge w3-theme-l3" style="margin:5px">
         <span id="router-address" class="w3-margin-right w3-hide"></span>
-        <a href="?"><i class="fas fa-power-off"></i></a>
+        <a id="refresh" href="" class="w3-margin-right w3-hide" onclick="update();return false;"><i class="fa fa-refresh"></i></a>
+        <a id="power" href="?"><i class="fas fa-power-off"></i></a>
+      </div>
+      <div class="w3-bar-item w3-right w3-round-xxlarge" style="margin:3px">
+        <a id="config-button" href="" onclick="$('#config-dropdown').toggleClass('w3-show');return false;"><i class="fa fa-gear"></i></a>
       </div>
     </div>
   </div>
@@ -68,6 +73,19 @@
     <i class="fa fa-warning"></i>
     <span>Unable to contact server! <a href="" onclick="document.location.reload();">retry</a> <a href="?">connect
         other</a></span>
+  </div>
+
+  <div>
+    <div id="config-dropdown" class="w3-dropdown-content w3-border" style="right:0">
+      <div class="w3-bar w3-border-bottom">
+        <div class="w3-bar-item"><label>autorefresh</label></div>
+        <div class="w3-bar-item w3-right"><div id="autorefresh-switch"></div></div>
+      </div>
+      <div class="w3-bar w3-cell-bottom w3-border-bottom">
+        <div class="w3-bar-item"><label>refresh period</label></div>
+        <div class="w3-bar-item w3-right"><input id="autorefresh-period" class="w3-input w3-border" type="number" value="500" style="text-align:right;padding:0px;height:30px;width:100px;"></div>
+      </div>
+    </div>
   </div>
 
   <div id="main" style="height:100%">
@@ -118,49 +136,9 @@
         <div id="router-panel-info-tab">
         </div>
         <div id="router-panel-storages-tab">
-          <div id="router-panel-storages-panel">
-          </div>
-          <script id="backend_list_item" type="x-tmpl-mustache">
-            <div id="backend_{{be_name}}" class="backend w3-card w3-section">
-              <h3>{{be_name}}</h3>
-              <div id="backend_{{be_name}}_content" class="w3-padding-small"></div>
-            </div>
-          </script>
-          <script id="storages_list_item" type="x-tmpl-mustache">
-            <div class="storage w3-card">
-              <div class="w3-bar w3-padding-small">
-                <div class="w3-bar-item w3-padding-small"><i class="fas fa-server"></i></div>
-                <div class="w3-col s3 w3-padding-small">{{name}}</div>
-                <div class="w3-col s7 w3-padding-small w3-monospace">{{path_expr}}</div>
-                <button onclick="deleteStorage('{{key}}')" class="w3-button w3-padding-small w3-border w3-round w3-theme-d1 w3-bar-item w3-right">delete</button>
-              </div>
-              <div class="w3-padding w3-monospace">
-                {{{properties}}}
-              </div>
-            </div>
-          </script>
-          <script id="add_storage_item" type="x-tmpl-mustache">
-            <div class="w3-card w3-round w3-section">
-              <div class="w3-padding w3-border-bottom">Create storage</div>
-              <form id="create_{{backend}}_storage" class="w3-container w3-section">
-                <div class="w3-row">
-                  <div class="w3-col s3">
-                    <label>Name</label>
-                    <input id="{{pid}}_{{backend}}_name" name="{{pid}}_{{backend}}_name" placeholder="name" class="w3-input w3-border w3-round"></input>
-                  </div>
-                  <div class="w3-col s9">
-                    <label>Path</label>
-                    <input id="{{pid}}_{{backend}}_path" name="{{pid}}_{{backend}}_path" placeholder="/path/to/store/**" class="w3-input w3-border w3-round"></input>
-                  </div>
-                  <label>Properties</label>
-                  <textarea id="{{pid}}_{{backend}}_props" name="{{pid}}_{{backend}}_props" placeholder="key=value" rows="3" class="w3-input w3-border w3-round w3-padding-small" type="text"></textarea>
-                </div>
-                <input type="submit" value="Create" class="w3-button w3-round w3-border w3-padding-small w3-theme-d1 w3-right w3-section">
-              </form>
-            </div>
-          </script>
-          <script id="load_backend_item" type="x-tmpl-mustache">
-            <div class="w3-card w3-round w3-section">
+          <script id="backend_list_template" type="x-tmpl-mustache">
+            <div id="backend_list" style="border:0 !important; padding:0 !important; margin:0 !important;"></div>
+            <div id="load_backend_item" class="w3-card w3-round w3-section">
               <div class="w3-padding w3-border-bottom">Load backend</div>
               <form id="load_backend" class="w3-container w3-section">
                 <input id="load_backend_pid" name="load_backend_pid" type="hidden" value="{{pid}}">
@@ -170,6 +148,45 @@
                 <textarea id="load_backend_props" name="load_backend_props" placeholder="key=value" rows="3" class="w3-input w3-border w3-round w3-padding-small" type="text"></textarea>
                 <input type="submit" value="Load" class="w3-button w3-round w3-border w3-padding-small w3-theme-d1 w3-right w3-section">
               </form>
+            </div>
+          </script>
+          <script id="backend_list_item_template" type="x-tmpl-mustache">
+            <div id="backend_{{backend}}" class="backend w3-card w3-section">
+              <h3>{{backend}}</h3>
+              <div id="backend_{{backend}}_content" class="w3-padding-small">
+                <div id="backend_{{backend}}_storage_list" style="border:0 !important; padding:0 !important; margin:0 !important;"></div>
+                <div id="add_storage_item" class="w3-card w3-round w3-section">
+                  <div class="w3-padding w3-border-bottom">Create storage</div>
+                  <form id="create_{{backend}}_storage" class="w3-container w3-section">
+                    <div class="w3-row">
+                      <div class="w3-col s3">
+                        <label>Name</label>
+                        <input id="{{pid}}_{{backend}}_name" name="{{pid}}_{{backend}}_name" placeholder="name" class="w3-input w3-border w3-round"></input>
+                      </div>
+                      <div class="w3-col s9">
+                        <label>Path</label>
+                        <input id="{{pid}}_{{backend}}_path" name="{{pid}}_{{backend}}_path" placeholder="/path/to/store/**" class="w3-input w3-border w3-round"></input>
+                      </div>
+                      <label>Properties</label>
+                      <textarea id="{{pid}}_{{backend}}_props" name="{{pid}}_{{backend}}_props" placeholder="key=value" rows="3" class="w3-input w3-border w3-round w3-padding-small" type="text"></textarea>
+                    </div>
+                    <input type="submit" value="Create" class="w3-button w3-round w3-border w3-padding-small w3-theme-d1 w3-right w3-section">
+                  </form>
+                </div>
+              </div>
+            </div>
+          </script>
+          <script id="storages_list_item_template" type="x-tmpl-mustache">
+            <div id="backend_{{backend}}_storage_{{name}}" class="storage w3-card">
+              <div class="w3-bar w3-padding-small">
+                <div class="w3-bar-item w3-padding-small"><i class="fas fa-server"></i></div>
+                <div class="w3-col s3 w3-padding-small">{{name}}</div>
+                <div class="w3-col s7 w3-padding-small w3-monospace">{{path_expr}}</div>
+                <button onclick="deleteStorage('{{key}}')" class="w3-button w3-padding-small w3-border w3-round w3-theme-d1 w3-bar-item w3-right">delete</button>
+              </div>
+              <div class="w3-padding w3-monospace">
+                {{{properties}}}
+              </div>
             </div>
           </script>
         </div>
