@@ -1,0 +1,42 @@
+{
+  "name": "zenoh-administration-tool",
+  "version": "1.0.0",
+  "description": "Zenoh Administration Tool",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder build"
+  },
+  "author": "ADLINK Technology",
+  "devDependencies": {
+    "electron": "^14.0.1",
+    "electron-builder": "^22.11.7"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.0"
+  },
+  "build": {
+    "appId": "ZenohAdministrationTool",
+    "productName": "ZenohAdministrationTool",
+    "copyright": "Copyright © 2021 ADLINK Technology",
+    "mac": {
+      "identity": false,
+      "icon": "./zenoh-icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "icon": "./zenoh-icon.png"
+    },
+    "linux": {
+      "icon": "./zenoh-icon.png",
+      "category": "Development"
+    },
+    "files": [
+      "*.js",
+      "*.html",
+      "*.svg",
+      "*.png",
+      "*.icns"
+    ]
+  }
+}
