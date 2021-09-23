@@ -51,11 +51,11 @@
       <div class="w3-bar-item w3-large">Zenoh Administration Space</div>
       <div id="connection_status" class="w3-bar-item w3-small w3-right w3-round-xxlarge w3-theme-l3" style="margin:5px">
         <span id="router-address" class="w3-margin-right w3-hide"></span>
-        <a id="refresh" href="" class="w3-margin-right w3-hide" onclick="update();return false;"><i class="fa fa-refresh"></i></a>
-        <a id="power" href="?"><i class="fas fa-power-off"></i></a>
+        <a id="refresh" title="refresh" href="" class="w3-margin-right w3-hide" onclick="update();return false;"><i class="fa fa-refresh"></i></a>
+        <a id="power" title="disconnect" href="?"><i class="fas fa-power-off"></i></a>
       </div>
       <div class="w3-bar-item w3-right w3-round-xxlarge" style="margin:3px">
-        <a id="config-button" href="" onclick="$('#config-dropdown').toggleClass('w3-show');return false;"><i class="fa fa-gear"></i></a>
+        <a id="config-button" title="configuration" href="" onclick="$('#config-dropdown').toggleClass('w3-show');return false;"><i class="fa fa-gear"></i></a>
       </div>
     </div>
   </div>
