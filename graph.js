@@ -29,7 +29,7 @@ var disabled_edge_color = {color:"#EEEEEE", highlight:"#EEEEEE", hover:"#EEEEEE"
 var flow_edge_color = {color:"#1387FF", highlight:"#1387FF", hover:"#1387FF"};
 
 var options = {
-    edges:{font:{face:'courier', size:10, multi:"html", bold:{face:'courier bold', size:12}}, selectionWidth:0},
+    edges:{font:{face:'courier', size:10, multi:"html", bold:{face:'courier bold', size:12}}, selectionWidth:0, smooth:{enabled:false}},
     nodes:{shape:"box", margin:4, //heightConstraint:50, widthConstraint:92,  
            font:{face:'courier', size:10, multi:"html", align:'left', bold:{face:'courier bold', size:12}},
            color:default_node_color},
