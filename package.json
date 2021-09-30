@@ -32,6 +32,7 @@
       "category": "Development"
     },
     "files": [
+      "deps/**/*",
       "*.js",
       "*.html",
       "*.svg",
