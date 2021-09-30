@@ -51,7 +51,7 @@
       <div class="w3-bar-item w3-large">Zenoh Administration Space</div>
       <div id="connection_status" class="w3-bar-item w3-small w3-right w3-round-xxlarge w3-theme-l3" style="margin:5px">
         <span id="router-address" class="w3-margin-right w3-hide"></span>
-        <a id="refresh" title="refresh" href="" class="w3-margin-right w3-hide" onclick="update();return false;"><i class="fa fa-refresh"></i></a>
+        <a id="refresh" title="refresh" href="" class="w3-margin-right w3-hide" onclick="update(false);return false;"><i class="fa fa-refresh"></i></a>
         <a id="power" title="disconnect" href="?"><i class="fas fa-power-off"></i></a>
       </div>
       <div class="w3-bar-item w3-right w3-round-xxlarge" style="margin:3px">
@@ -93,9 +93,9 @@
       <div id="presentation-selector" style="display:block;">
         <div class="w3-show-inline-block w3-margin">
           <div class="w3-bar w3-round w3-border">
-            <button id="routers-list-btn" onclick="changeHash('LIST', $.url().attr('fragment').split(':')[1]);" class="w3-bar-item w3-button w3-theme-d1" style="width:120px"><i
+            <button id="routers-list-btn" onclick="changeHash('LIST', $.url().attr('fragment').split(':')[1], $.url().attr('fragment').split(':')[2]);" class="w3-bar-item w3-button w3-theme-d1" style="width:120px"><i
                 class="fa fa-bars"></i>&nbsp;list</button>
-            <button id="routers-graph-btn" onclick="changeHash('GRAPH', $.url().attr('fragment').split(':')[1]);"  class="w3-bar-item w3-button" style="width:120px"><i
+            <button id="routers-graph-btn" onclick="changeHash('GRAPH', $.url().attr('fragment').split(':')[1], $.url().attr('fragment').split(':')[2]);"  class="w3-bar-item w3-button" style="width:120px"><i
                 class="fas fa-project-diagram"></i>&nbsp;graph</button>
           </div>
         </div>
@@ -113,29 +113,47 @@
           </div>
         </li>
       </script>
-      <div id="routers-graph" style="height:100%;display:none" class="w3-card">
+      <div id="routers-graph" style="height:100%;display:none" class="w3-card w3-left">
+        <div id="routers-graph-opts" class="w3-sidebar  w3-bar-block w3-theme-d1" style="width:35px">
+          <a id="graph-config-button" title="configuration" class="w3-bar-item w3-large w3-padding-small" href="" onclick="$('#graph-config-dropdown').toggleClass('w3-show');return false;"><i class="fa fa-gear"></i></a>
+          <a id="graph-redraw-button" title="redraw" class="w3-bar-item w3-large w3-padding-small" href="" onclick="redraw();return false;"><i class="fa fa-refresh"></i></a>
+        </div>
+        <div id="routers-graph-panel" style="height:100%">
+          <div id="graph-config-dropdown" class="w3-dropdown-content w3-border" style="margin-left:35px">
+            <div class="w3-bar w3-border-bottom">
+              <div class="w3-bar-item"><label>Show clients</label></div>
+              <div class="w3-bar-item w3-right"><div id="clients-switch"></div></div>
+            </div>
+            <div class="w3-bar w3-cell-bottom w3-border-bottom">
+              <div class="w3-bar-item"><label>Physics</label></div>
+              <div class="w3-bar-item w3-right"><div id="physics-switch"></div></div>
+            </div>
+          </div>
+          <div id="routers-graph-canvas" style="height:100%">
+          </div>
+        </div>
       </div>
     </div>
 
-    <div id="router-panel" class="w3-card" style="box-sizing:border-box">
+    <div id="side-panel" class="w3-card" style="box-sizing:border-box">
       <div class="w3-bar w3-theme-d1">
         <button onclick="$('#main').jqxSplitter('collapse')" class="w3-bar-item w3-button w3-large">
           <i class="fa fa-close"></i>
         </button>
-        <div id="router-panel-title" class="w3-bar-item w3-large">
+        <div id="side-panel-title" class="w3-bar-item w3-large">
         </div>
       </div>
-      <div id="router-panel-tabs-empty" class="w3-padding-large w3-text-light-gray" style="width:100%;height:100%;">
+      <div id="side-panel-tabs-empty" class="w3-padding-large w3-text-light-gray" style="width:100%;height:100%;">
         <i class="fas fa-dragon " style="transform: scaleX(-1); width:100%; height:100%;"></i>
       </div>
-      <div id="router-panel-tabs" class="" style="display:none">
+      <div id="side-panel-tabs" class="" style="display:none">
         <ul>
-          <li><a href="#router-panel-info-tab">Info</a></li>
-          <li><a href="#router-panel-storages-tab">Storages</a></li>
+          <li><a href="#side-panel-info-tab">Info</a></li>
+          <li><a href="#side-panel-storages-tab">Storages</a></li>
         </ul>
-        <div id="router-panel-info-tab">
+        <div id="side-panel-info-tab">
         </div>
-        <div id="router-panel-storages-tab">
+        <div id="side-panel-storages-tab">
           <script id="backend_list_template" type="x-tmpl-mustache">
             <div id="backend_list" style="border:0 !important; padding:0 !important; margin:0 !important;"></div>
             <div id="load_backend_item" class="w3-card w3-round w3-section">

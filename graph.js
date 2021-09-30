@@ -39,12 +39,12 @@ var network;
 
 function initGraph() {
     if (container === undefined) {
-        container = document.getElementById('routers-graph')
+        container = document.getElementById('routers-graph-canvas')
         redraw();
     }
 }
 
-function selectRouterNode(pid) {
+function selectNode(pid) {
     if (network) {
         if (pid) {
             network.selectNodes([pid]);
@@ -68,13 +68,21 @@ function updateDataSet(set, elements) {
 }
 
 function updateNodes(zServices) {
-    zNodes = Object.keys(zServices).map( function(id, idx) {
+    zRouters = Object.keys(zServices).map( function(id, idx) {
         title = "<b>Router</b></br>" + 
                 zServices[id].pid + "</br>" + 
                 zServices[id].locators;
-        return {id: zServices[id].pid, shape: "image", image: { unselected: "router.svg", selected: "router-dark.svg" }, title: title};
+        return {id: zServices[id].pid, type: "router", shape: "image", image: { unselected: "router.svg", selected: "router-dark.svg" }, title: title};
     });
-    updateDataSet(nodes, zNodes);
+    zClients = $('#clients-switch').val() ?
+        Object.keys(zServices).map( function(id, idx) {
+            return zServices[id].sessions.filter(session => session.whatami === "client").map(function (session) {
+                title = "<b>Client</b></br>" + session.peer + "</br>";
+                return {id: session.peer, type: "client", parent: zServices[id].pid, shape: "image", image: { unselected: "client.svg", selected: "client-dark.svg" }, title: title};
+            });
+        }).flat()
+    :[];
+    updateDataSet(nodes, zRouters.concat(zClients));
 }
 
 function updateEdges(zServices) {
@@ -107,7 +115,11 @@ function updateGraph(zServices) {
 
 function showDetails() {
     if(network && network.getSelectedNodes()[0]) {
-        changeHash('GRAPH', network.getSelectedNodes()[0]);
+        if (network.body.data.nodes._data[network.getSelectedNodes()[0]].type === 'client') {
+            changeHash('GRAPH', network.body.data.nodes._data[network.getSelectedNodes()[0]].parent, network.getSelectedNodes()[0]);
+        } else {
+            changeHash('GRAPH', network.getSelectedNodes()[0]);
+        }
     } else {
         changeHash('GRAPH');
     }
@@ -123,7 +135,7 @@ function redraw() {
     $.getJSON($.url().param('url') + "/@/router/*", zServices => {
         resetGraph();
         updateGraph(transform(zServices));
-        selectRouterNode($.url().attr('fragment').split(':')[1]);
+        selectNode($.url().attr('fragment').split(':')[1]);
     })
     .fail(() => {
         resetGraph();

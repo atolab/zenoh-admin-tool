@@ -44,34 +44,44 @@ function showListPanel() {
   $("#routers-list-btn").addClass("w3-theme-d1");
 }
 
-function selectRouter(pid) {
+function selectProcess(pid, subpid) {
   $("#routers-list").children().removeClass("w3-theme-d1");
-  $("#" + pid).addClass("w3-theme-d1");
-  updateRouterPanel(pid);
-  selectRouterNode(pid);
+  if (subpid) {
+    selectNode(subpid);
+  } else {
+    $("#" + pid).addClass("w3-theme-d1");
+    selectNode(pid);
+  }
+  updateSidePanel(pid, subpid);
 }
 
-function updateRouterPanel(pid) {
+function updateSidePanel(pid, subpid) {
   if (pid) {
-    $("#router-panel-title").html("Router " + pid);
-    $("#router-panel-tabs").css("display", "block");
-    $("#router-panel-tabs-empty").css("display", "none");
-    updateStoragesPanel(pid);
-    $.getJSON($.url().param('url') + "/@/router/" + pid, zRouter => {
-      if (zRouter[0].value) {
-        routereditor.update(zRouter[0].value);
-      }
-    }).fail(function () { failure(); });
+    if (subpid) {
+      $("#side-panel-title").html("Client " + subpid);
+      $("#side-panel-tabs").css("display", "none");
+      $("#side-panel-tabs-empty").css("display", "block");
+    } else {
+      $("#side-panel-title").html("Router " + pid);
+      $("#side-panel-tabs").css("display", "block");
+      $("#side-panel-tabs-empty").css("display", "none");
+      updateStoragesPanel(pid);
+      $.getJSON($.url().param('url') + "/@/router/" + pid, zRouter => {
+        if (zRouter[0].value) {
+          routereditor.update(zRouter[0].value);
+        }
+      }).fail(function () { failure(); });
+    }
   } else {
-    $("#router-panel-title").html("");
-    $("#router-panel-tabs").css("display", "none");
-    $("#router-panel-tabs-empty").css("display", "block");
+    $("#side-panel-title").html("");
+    $("#side-panel-tabs").css("display", "none");
+    $("#side-panel-tabs-empty").css("display", "block");
   }
 }
 
 function updateStoragesPanel(pid) {
   if (!$("#backend_list").length) {
-    $("#router-panel-storages-tab").append(
+    $("#side-panel-storages-tab").append(
       Mustache.render($('#backend_list_template').html(), { pid: pid })
     );
   }
@@ -172,9 +182,13 @@ function createStorage(pid, backend, name, properties) {
   }).fail(function () { failure(); });
 }
 
-function changeHash(view, pid) {
+function changeHash(view, pid, subpid) {
   if (pid) {
-    location.href='#' + view + ':' + pid;
+    if (subpid) {
+      location.href='#' + view + ':' + pid + ':' + subpid;
+    } else {
+      location.href='#' + view + ':' + pid;
+    }
   } else {
     location.href='#' + view + ':';
   }
@@ -190,7 +204,7 @@ function updateList(zServices) {
   );
 }
 
-function update() {
+function update(schedule) {
   $.getJSON($.url().param('url') + "/@/router/*", zServices => {
     try {
       cleanFailure();
@@ -205,26 +219,34 @@ function update() {
     } catch (error) {
       console.error(error);
     }
-    scheduleUpdate();
   }).fail(function () { 
     failure(); 
-    scheduleUpdate();
   });
 }
 
-function scheduleUpdate() {
+function getPeriod() {
+  period = parseInt($('#autorefresh-period').val());
+  if (isNaN(period)) { period = 500; }
+  if (period < 100) { period = 100; }
+  return period;
+}
+
+function periodicUpdate() {
+  update();
   if ($('#autorefresh-switch').val()) {
-    period = parseInt($('#autorefresh-period').val());
-    if (isNaN(period)) { period = 500; }
-    if (period < 100) { period = 100; }
-    setTimeout(update, period);
+    setTimeout(periodicUpdate, getPeriod());
   }
 }
 
 $(document).ready(function () {
   $("#connect-dialog").dialog({ autoOpen: false });
   $('#autorefresh-switch').jqxSwitchButton({checked:true, height: 30});
-  $('#autorefresh-switch').bind("checked", function(event){ if (typeof $.url().param('url') !== 'undefined') { update(); } });
+  $('#autorefresh-switch').bind("checked", function(event){ if (typeof $.url().param('url') !== 'undefined') { periodicUpdate(); } });
+  $('#clients-switch').jqxSwitchButton({checked:false, height: 20});
+  $('#clients-switch').bind("change", function(event){ update(); });
+  $('#physics-switch').jqxSwitchButton({checked:true, height: 20});
+  $('#physics-switch').bind("checked", function(event){ if (network) { network.setOptions({physics:{enabled:true}}) }});
+  $('#physics-switch').bind("unchecked", function(event){ if (network) { network.setOptions({physics:{enabled:false}}) }});
   $('#main').jqxSplitter({ width: '100%', height: '100%', panels: [{ size: '60%', min: '20%', collapsible: false }, { size: '40%', min: '0%'}]});
   $('#main').on('expanded', function (event) {
     event.owner.splitBarButton.css("display", "none");
@@ -255,11 +277,11 @@ $(document).ready(function () {
     $("#router-address").removeClass('w3-hide');
     $("#refresh").removeClass('w3-hide');
 
-    $("#router-panel-tabs").tabs();
+    $("#side-panel-tabs").tabs();
 
-    routereditor = new JSONEditor($('#router-panel-info-tab')[0], { mode: 'view' });
+    routereditor = new JSONEditor($('#side-panel-info-tab')[0], { mode: 'view' });
 
-    update();
+    periodicUpdate();
   }
 })
 
@@ -271,6 +293,6 @@ window.onhashchange = function () {
   } else {
     showListPanel();
   }
-  selectRouter(split[1]);
+  selectProcess(split[1], split[2]);
 }
 
