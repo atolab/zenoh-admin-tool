@@ -141,7 +141,6 @@
             <div id="load_backend_item" class="w3-card w3-round w3-section">
               <div class="w3-padding w3-border-bottom">Load backend</div>
               <form id="load_backend" class="w3-container w3-section">
-                <input id="load_backend_pid" name="load_backend_pid" type="hidden" value="{{pid}}">
                 <label>Name</label>
                 <input id="load_backend_name" name="load_backend_name" placeholder="name" class="w3-input w3-border w3-round w3-padding-small" type="text">
                 <label>Properties</label>
@@ -161,14 +160,14 @@
                     <div class="w3-row">
                       <div class="w3-col s3">
                         <label>Name</label>
-                        <input id="{{pid}}_{{backend}}_name" name="{{pid}}_{{backend}}_name" placeholder="name" class="w3-input w3-border w3-round"></input>
+                        <input id="create_{{backend}}_storage_name" name="create_{{backend}}_storage_name" placeholder="name" class="w3-input w3-border w3-round"></input>
                       </div>
                       <div class="w3-col s9">
                         <label>Path</label>
-                        <input id="{{pid}}_{{backend}}_path" name="{{pid}}_{{backend}}_path" placeholder="/path/to/store/**" class="w3-input w3-border w3-round"></input>
+                        <input id="create_{{backend}}_storage_path" name="create_{{backend}}_storage_path" placeholder="/path/to/store/**" class="w3-input w3-border w3-round"></input>
                       </div>
                       <label>Properties</label>
-                      <textarea id="{{pid}}_{{backend}}_props" name="{{pid}}_{{backend}}_props" placeholder="key=value" rows="3" class="w3-input w3-border w3-round w3-padding-small" type="text"></textarea>
+                      <textarea id="create_{{backend}}_storage_props" name="create_{{backend}}_storage_props" placeholder="key=value" rows="3" class="w3-input w3-border w3-round w3-padding-small" type="text"></textarea>
                     </div>
                     <input type="submit" value="Create" class="w3-button w3-round w3-border w3-padding-small w3-theme-d1 w3-right w3-section">
                   </form>
@@ -181,11 +180,10 @@
               <div class="w3-bar w3-padding-small">
                 <div class="w3-bar-item w3-padding-small"><i class="fas fa-server"></i></div>
                 <div class="w3-col s3 w3-padding-small">{{name}}</div>
-                <div class="w3-col s7 w3-padding-small w3-monospace">{{path_expr}}</div>
-                <button onclick="deleteStorage('{{key}}')" class="w3-button w3-padding-small w3-border w3-round w3-theme-d1 w3-bar-item w3-right">delete</button>
+                <div id="backend_{{backend}}_storage_{{name}}_path_expr" class="w3-col s7 w3-padding-small w3-monospace"></div>
+                <button id="backend_{{backend}}_storage_{{name}}_delete" class="w3-button w3-padding-small w3-border w3-round w3-theme-d1 w3-bar-item w3-right">delete</button>
               </div>
-              <div class="w3-padding w3-monospace">
-                {{{properties}}}
+              <div d="backend_{{backend}}_storage_{{name}}_properties" class="w3-padding w3-monospace">
               </div>
             </div>
           </script>

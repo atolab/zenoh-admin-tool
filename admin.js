@@ -74,19 +74,20 @@ function updateStoragesPanel(pid) {
     $("#router-panel-storages-tab").append(
       Mustache.render($('#backend_list_template').html(), { pid: pid })
     );
-    $("#load_backend").submit(function (event) {
-      $.ajax({
-        url: $.url().param('url') + "/@/router/" + $('#load_backend_pid').val() + "/plugin/storages/backend/" + $('#load_backend_name').val(),
-        type: 'PUT',
-        headers: { "content-type": "application/properties" },
-        data: $('#load_backend_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""),
-        success: function (rep) {
-          setTimeout(function () { updateStoragesPanel(pid); }, 200);
-        },
-      }).fail(function () { failure(); });
-      event.preventDefault();
-    });
   }
+  $("#load_backend").off("submit");
+  $("#load_backend").on("submit", function (event) {
+    $.ajax({
+      url: $.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + $('#load_backend_name').val(),
+      type: 'PUT',
+      headers: { "content-type": "application/properties" },
+      data: $('#load_backend_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""),
+      success: function (rep) {
+        setTimeout(function () { updateStoragesPanel(pid); }, 200);
+      },
+    }).fail(function () { failure(); });
+    event.preventDefault();
+  });
   $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/*", zBackends => {
     $("#backend_list").children().filter(function(){
       return !zBackends.some(be => "backend_" + be.key.split('/').reverse()[0] == $(this).attr('id'));
@@ -94,17 +95,11 @@ function updateStoragesPanel(pid) {
     zBackends.forEach(be => {
       backend = be.key.split('/').reverse()[0];
       if (!$("#backend_" + backend).length) {
-        $("#backend_list").append(Mustache.render($('#backend_list_item_template').html(), { backend: backend, pid: pid }));
+        $("#backend_list").append(Mustache.render($('#backend_list_item_template').html(), { backend: backend }));
         $("#backend_" + backend).accordion({
           active: "false",
           collapsible: "true",
           heightStyle: "content"
-        });
-        $("#create_" + backend + "_storage").submit(function (event) {
-          createStorage(pid, backend, $('#' + pid + '_' + backend + '_name').val(),
-            ' path_expr=' + $('#' + pid + '_' + backend + '_path').val() + ';'
-            + $('#' + pid + '_' + backend + '_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""));
-          event.preventDefault();
         });
       }
     });
@@ -115,6 +110,13 @@ function updateStoragesPanel(pid) {
 }
 
 function updateBackendPanel(pid, backend) {
+  $("#create_" + backend + "_storage").off("submit");
+  $("#create_" + backend + "_storage").on("submit", function (event) {
+    event.preventDefault();
+    createStorage(pid, backend, $('#create_' + backend + '_storage_name').val(),
+      ' path_expr=' + $('#create_' + backend + '_storage_path').val() + ';'
+      + $('#create_' + backend + '_storage_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""));
+  });
   $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/*", zStorages => {
     $("#backend_" + backend + "_storage_list").children().filter(function(){
       return !zStorages.some(sto => "backend_" + backend + "_storage_" + sto.key.split('/').reverse()[0] == $(this).attr('id'));
@@ -126,14 +128,6 @@ function updateBackendPanel(pid, backend) {
           Mustache.render($('#storages_list_item_template').html(), {
             name: sto.key.split('/').reverse()[0],
             backend: backend,
-            path_expr: sto.value.path_expr,
-            key: sto.key,
-            properties: JSON.stringify(sto.value)
-              .replaceAll("{", "")
-              .replaceAll("}", "")
-              .replaceAll("\":\"", " = ")
-              .replaceAll(",", "<br>")
-              .replaceAll("\"", ""),
           })
         );
         $("#backend_" + backend + "_storage_" + sto_name).accordion({
@@ -143,6 +137,14 @@ function updateBackendPanel(pid, backend) {
           icons: false,
         });
       }
+      $("#backend_" + backend + "_storage_" + sto_name + "_path_expr").html(sto.value.path_expr);
+      $("#backend_" + backend + "_storage_" + sto_name + "_properties").html(JSON.stringify(sto.value)
+        .replaceAll("{", "")
+        .replaceAll("}", "")
+        .replaceAll("\":\"", " = ")
+        .replaceAll(",", "<br>")
+        .replaceAll("\"", ""));
+      $("#backend_" + backend + "_storage_" + sto_name + "_delete").attr("onclick", "deleteStorage('" + sto.key + "')");
     });
     $(".storage button").click(function (e) { e.stopPropagation() });
   }).fail(function () { failure(); });
