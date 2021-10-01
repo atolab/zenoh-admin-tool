@@ -29,13 +29,38 @@ var disabled_edge_color = {color:"#EEEEEE", highlight:"#EEEEEE", hover:"#EEEEEE"
 var flow_edge_color = {color:"#1387FF", highlight:"#1387FF", hover:"#1387FF"};
 
 var options = {
-    edges:{font:{face:'courier', size:10, multi:"html", bold:{face:'courier bold', size:12}}, selectionWidth:0, smooth:{enabled:false}},
-    nodes:{shape:"box", margin:4, //heightConstraint:50, widthConstraint:92,  
-           font:{face:'courier', size:10, multi:"html", align:'left', bold:{face:'courier bold', size:12}},
-           color:default_node_color},
-    physics:{enabled:true}
+    edges:{font:{face:'sans-serif', size:10, multi:"html", bold:{face:'sans-serif', size:12}}, selectionWidth:0, smooth:{enabled:false}},
+    nodes:{font:{face:'sans-serif', size:10, multi:"html", bold:{face:'sans-serif', size:12}}, color:default_node_color},
+    physics:{enabled:true},
 };
 var network;
+
+$(document).ready(function () {
+    $('#graph-config-button').attr("onClick", 
+        "$('#graph-stats-dropdown').removeClass('w3-show');$('#graph-config-dropdown').toggleClass('w3-show');" +
+        "$('#graph-stats-button').removeClass('w3-theme-l3');$('#graph-config-button').toggleClass('w3-theme-l3');" +
+        "return false;");
+    $('#graph-stats-button').attr("onClick", 
+        "$('#graph-config-dropdown').removeClass('w3-show');$('#graph-stats-dropdown').toggleClass('w3-show');" +
+        "$('#graph-config-button').removeClass('w3-theme-l3');$('#graph-stats-button').toggleClass('w3-theme-l3');" +
+        "return false;");
+
+    $('#clients-switch').jqxSwitchButton({checked:false, height: 20});
+    $('#clients-switch').bind("change", function(event){ update(); });
+    $('#stats-switch').jqxSwitchButton({checked:false, height: 20});
+    $('#stats-switch').bind("change", function(event){ update(); });
+    $('#physics-switch').jqxSwitchButton({checked:true, height: 20});
+    $('#physics-switch').bind("checked", function(event){ if (network) { network.setOptions({physics:{enabled:true}}) }});
+    $('#physics-switch').bind("unchecked", function(event){ if (network) { network.setOptions({physics:{enabled:false}}) }});
+
+    $('#edge-highlight-none').bind("change", function(event){ update(); });
+    $('#edge-highlight-bytes').bind("change", function(event){ update(); });
+    $('#edge-highlight-t-msgs').bind("change", function(event){ update(); });
+    $('#edge-highlight-z-msgs').bind("change", function(event){ update(); });
+    $('#edge-highlight-z-data').bind("change", function(event){ update(); });
+    $('#edge-highlight-z-query').bind("change", function(event){ update(); });
+    $('#edge-highlight-z-reply').bind("change", function(event){ update(); });
+})
 
 function initGraph() {
     if (container === undefined) {
@@ -85,10 +110,73 @@ function updateNodes(zServices) {
     updateDataSet(nodes, zRouters.concat(zClients));
 }
 
+function getHighlight(old_stats, new_stats, rate) {
+    if ($('#edge-highlight-bytes').is(':checked')) {
+        return [ (new_stats.tx_bytes - old_stats.tx_bytes) / rate, (new_stats.rx_bytes - old_stats.rx_bytes) / rate, " b/s" ];
+    }
+    if ($('#edge-highlight-t-msgs').is(':checked')) {
+        return [ (new_stats.tx_t_msgs - old_stats.tx_t_msgs) / rate, (new_stats.rx_t_msgs - old_stats.rx_t_msgs) / rate, " m/s" ];
+    }
+    if ($('#edge-highlight-z-msgs').is(':checked')) {
+        return [ (new_stats.tx_z_msgs - old_stats.tx_z_msgs) / rate, (new_stats.rx_z_msgs - old_stats.rx_z_msgs) / rate, " m/s" ];
+    }
+    if ($('#edge-highlight-z-data').is(':checked')) {
+        return [ (new_stats.tx_z_data_msgs - old_stats.tx_z_data_msgs) / rate, (new_stats.rx_z_data_msgs - old_stats.rx_z_data_msgs) / rate, " m/s" ];
+    }
+    if ($('#edge-highlight-z-query').is(':checked')) {
+        return [ (new_stats.tx_z_query_msgs - old_stats.tx_z_query_msgs) / rate, (new_stats.rx_z_query_msgs - old_stats.rx_z_query_msgs) / rate, " m/s" ];
+    }
+    if ($('#edge-highlight-z-reply').is(':checked')) {
+        return [ (new_stats.tx_z_data_reply_msgs - old_stats.tx_z_data_reply_msgs) / rate, (new_stats.rx_z_data_reply_msgs - old_stats.rx_z_data_reply_msgs) / rate, " m/s" ];
+    }
+}
+
 function updateEdges(zServices) {
+    period = 0;
+    time = new Date().getTime();
+    if (localStorage["updateEdges"]) {
+        period = time - localStorage["updateEdges"];
+    }
+    localStorage["updateEdges"] = time;
     links = Object.keys(zServices).map( function(id, idx) {
         return zServices[id].sessions
+            .filter(session => session.whatami != "router" || zServices[id].pid > session.peer)
             .map( function (session){ 
+                if ($('#stats-switch').val()) {
+                    if (session.stats) {
+                        if ((!$('#edge-highlight-none').is(':checked')) && localStorage[zServices[id].pid + "_" + session.peer] && period > 0) {
+                            previous = JSON.parse(localStorage[zServices[id].pid + "_" + session.peer]);
+                            const [tx_rate, rx_rate, unit] = getHighlight(previous, session.stats, period / 1000);
+                            localStorage[zServices[id].pid + "_" + session.peer] = JSON.stringify(session.stats);
+
+                            if (Math.floor(tx_rate) + Math.floor(rx_rate) > 0) {
+                                arrows = '';
+                                if (Math.floor(tx_rate) > 0) {arrows += 'to, '}
+                                if (Math.floor(rx_rate) > 0) {arrows += 'from, '}
+                                label= "<b>" + (Math.floor(tx_rate) + Math.floor(rx_rate)) + unit + "</b>";
+                                return {
+                                    id: linkId(zServices[id].pid, session.peer),
+                                    from: zServices[id].pid, to: session.peer, 
+                                    label:label, arrows:arrows, 
+                                    color:flow_edge_color, dashes:false, width:4};
+                            }
+                            return {
+                                id: linkId(zServices[id].pid, session.peer),
+                                from: zServices[id].pid, to: session.peer, 
+                                label:"<b>0 " + unit + "</b>", arrows:'', 
+                                color:null, dashes:false, width:2};
+                        }
+                        else
+                        {
+                            localStorage[zServices[id].pid + "_" + session.peer] = JSON.stringify(session.stats);
+                        }
+                    }
+                    return {
+                        id: linkId(zServices[id].pid, session.peer),
+                        from: zServices[id].pid, to: session.peer, 
+                        label:"<b></b>", arrows:'', 
+                        color:null, dashes:false, width:2};
+                }
                 return {
                     id: linkId(zServices[id].pid, session.peer),
                     from: zServices[id].pid, to: session.peer, 

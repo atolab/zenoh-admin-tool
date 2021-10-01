@@ -242,11 +242,6 @@ $(document).ready(function () {
   $("#connect-dialog").dialog({ autoOpen: false });
   $('#autorefresh-switch').jqxSwitchButton({checked:true, height: 30});
   $('#autorefresh-switch').bind("checked", function(event){ if (typeof $.url().param('url') !== 'undefined') { periodicUpdate(); } });
-  $('#clients-switch').jqxSwitchButton({checked:false, height: 20});
-  $('#clients-switch').bind("change", function(event){ update(); });
-  $('#physics-switch').jqxSwitchButton({checked:true, height: 20});
-  $('#physics-switch').bind("checked", function(event){ if (network) { network.setOptions({physics:{enabled:true}}) }});
-  $('#physics-switch').bind("unchecked", function(event){ if (network) { network.setOptions({physics:{enabled:false}}) }});
   $('#main').jqxSplitter({ width: '100%', height: '100%', panels: [{ size: '60%', min: '20%', collapsible: false }, { size: '40%', min: '0%'}]});
   $('#main').on('expanded', function (event) {
     event.owner.splitBarButton.css("display", "none");
