@@ -46,13 +46,13 @@ function showListPanel() {
 
 function selectProcess(pid, subpid) {
   $("#routers-list").children().removeClass("w3-theme-d1");
+  updateSidePanel(pid, subpid);
   if (subpid) {
     selectNode(subpid);
   } else {
     $("#" + pid).addClass("w3-theme-d1");
     selectNode(pid);
   }
-  updateSidePanel(pid, subpid);
 }
 
 function updateSidePanel(pid, subpid) {
@@ -69,6 +69,7 @@ function updateSidePanel(pid, subpid) {
       $.getJSON($.url().param('url') + "/@/router/" + pid, zRouter => {
         if (zRouter[0].value) {
           routereditor.update(zRouter[0].value);
+          updateClientsPanel(zRouter[0].value);
         }
       }).fail(function () { failure(); });
     }
@@ -158,6 +159,18 @@ function updateBackendPanel(pid, backend) {
     });
     $(".storage button").click(function (e) { e.stopPropagation() });
   }).fail(function () { failure(); });
+}
+
+function updateClientsPanel(zRouter) {
+  zRouter.sessions.sort(function(a, b) {return a.peer.localeCompare(b.peer);});
+  $("#clients-list").html(
+    zRouter.sessions
+      .filter(session => session.whatami === "client")
+      .map(session => Mustache.render(
+        $('#clients_list_item').html(),
+        { pid: zRouter.pid, subpid: session.peer }
+      ))
+  );
 }
 
 function deleteStorage(sto) {

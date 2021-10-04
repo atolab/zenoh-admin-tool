@@ -70,8 +70,8 @@ function initGraph() {
 }
 
 function selectNode(pid) {
-    if (network) {
-        if (pid) {
+    if (network && data) {
+        if (pid && nodes.get(pid)) {
             network.selectNodes([pid]);
         } else {
             network.selectNodes([]);

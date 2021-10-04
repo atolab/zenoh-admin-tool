@@ -190,8 +190,9 @@
       </div>
       <div id="side-panel-tabs" class="" style="display:none">
         <ul>
-          <li><a href="#side-panel-info-tab">Info</a></li>
-          <li><a href="#side-panel-storages-tab">Storages</a></li>
+          <li><a href="#side-panel-info-tab"><i class="fas fa-info-circle"></i> Info</a></li>
+          <li><a href="#side-panel-storages-tab"><i class="fas fa-server"></i> Storages</a></li>
+          <li><a href="#side-panel-clients-tab"><i class="fas fa-neuter" style="transform: scaleY(-1)"></i> Clients</a></li>
         </ul>
         <div id="side-panel-info-tab">
         </div>
@@ -246,6 +247,20 @@
               <div d="backend_{{backend}}_storage_{{name}}_properties" class="w3-padding w3-monospace">
               </div>
             </div>
+          </script>
+        </div>
+        <div id="side-panel-clients-tab">
+          <ul id="clients-list" class="w3-ul w3-hoverable w3-card-4" style="overflow-y:auto;">
+          </ul>
+          <script id="clients_list_item" type="x-tmpl-mustache">
+            <li id="{{subpid}}" class="w3-bar" style="cursor:pointer" onclick="changeHash($.url().attr('fragment').split(':')[0], '{{pid}}', '{{subpid}}');">
+              <div class="w3-bar-item w3-hide-small">
+                <span class="w3-large">Client</span><br>
+              </div>
+              <div class="w3-bar-item">
+                <span>{{subpid}}</span>
+              </div>
+            </li>
           </script>
         </div>
       </div>
