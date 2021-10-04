@@ -78,12 +78,12 @@
   <div>
     <div id="config-dropdown" class="w3-dropdown-content w3-border" style="right:0">
       <div class="w3-bar w3-border-bottom">
-        <div class="w3-bar-item"><label>autorefresh</label></div>
+        <div class="w3-bar-item"><label>autorefresh:</label></div>
         <div class="w3-bar-item w3-right"><div id="autorefresh-switch"></div></div>
       </div>
       <div class="w3-bar w3-cell-bottom w3-border-bottom">
-        <div class="w3-bar-item"><label>refresh period</label></div>
-        <div class="w3-bar-item w3-right"><input id="autorefresh-period" class="w3-input w3-border" type="number" value="500" style="text-align:right;padding:0px;height:30px;width:100px;"></div>
+        <div class="w3-bar-item"><label>refresh period (ms):</label></div>
+        <div class="w3-bar-item w3-right"><input id="autorefresh-period" type="number" value="500" style="text-align:right;padding:0px;height:25px;width:100px;"></div>
       </div>
     </div>
   </div>
@@ -122,23 +122,37 @@
         <div id="routers-graph-panel" style="height:100%">
           <div id="graph-config-dropdown" class="w3-dropdown-content w3-border" style="margin-left:35px">
             <div class="w3-bar w3-border-bottom">
-              <div class="w3-bar-item"><label>Show clients</label></div>
+              <div class="w3-bar-item"><label>Show clients:</label></div>
               <div class="w3-bar-item w3-right"><div id="clients-switch"></div></div>
             </div>
             <div class="w3-bar w3-cell-bottom w3-border-bottom">
-              <div class="w3-bar-item"><label>Physics</label></div>
+              <div class="w3-bar-item"><label>Physics:</label></div>
               <div class="w3-bar-item w3-right"><div id="physics-switch"></div></div>
             </div>
           </div>
           <div id="graph-stats-dropdown" class="w3-dropdown-content w3-border" style="margin-left:35px;margin-top:30px">
             <div class="w3-bar w3-cell-bottom w3-border-bottom">
               <div class="w3-bar">
-                <div class="w3-bar-item"><label>Statistics</label></div>
+                <div class="w3-bar-item"><label>Statistics:</label></div>
                 <div class="w3-bar-item w3-right"><div id="stats-switch"></div></div>
               </div>
             </div>
             <div class="w3-bar w3-cell-bottom w3-border-bottom">
               <div class="w3-bar">
+                <div class="w3-bar-item"><label for="edge_highlight">Edge highlight:</label></div>
+                <div class="w3-bar-item w3-right">
+                  <select name="edge_highlight" id="edge_highlight">
+                    <option value="None" selected>None</option>
+                    <option value="Total bytes/s">Total bytes/s</option>
+                    <option value="Total transport msgs/s">Total transport msgs/s</option>
+                    <option value="Total zenoh msgs/s">Total zenoh msgs/s</option>
+                    <option value="Total zenoh data/s">Total zenoh data/s</option>
+                    <option value="Total zenoh query/s">Total zenoh query/s</option>
+                    <option value="Total zenoh reply/s">Total zenoh reply/s</option>
+                  </select>
+                </div>
+              </div>
+              <!-- <div class="w3-bar">
                 <div class="w3-bar-item"><label>Edge highlight</label></div>
               </div>
               <div class="w3-bar" style="padding-left:10px">
@@ -168,7 +182,7 @@
               <div class="w3-bar" style="padding-left:10px">
                 <div class="w3-bar-item"><label>Total zenoh reply/s</label></div>
                 <div class="w3-bar-item w3-right"><input type="radio" id="edge-highlight-z-reply" name="edge-highlight" value="Total zenoh reply/s"></div>
-              </div>
+              </div> -->
             </div>
           </div>
           <div id="routers-graph-canvas" style="height:100%">

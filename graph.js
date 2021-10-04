@@ -45,21 +45,15 @@ $(document).ready(function () {
         "$('#graph-config-button').removeClass('w3-theme-l3');$('#graph-stats-button').toggleClass('w3-theme-l3');" +
         "return false;");
 
-    $('#clients-switch').jqxSwitchButton({checked:false, height: 20});
+    $('#clients-switch').jqxSwitchButton({checked:false, height: 25});
     $('#clients-switch').bind("change", function(event){ update(); });
-    $('#stats-switch').jqxSwitchButton({checked:false, height: 20});
-    $('#stats-switch').bind("change", function(event){ update(); });
-    $('#physics-switch').jqxSwitchButton({checked:true, height: 20});
+    $('#physics-switch').jqxSwitchButton({checked:true, height: 25});
     $('#physics-switch').bind("checked", function(event){ if (network) { network.setOptions({physics:{enabled:true}}) }});
     $('#physics-switch').bind("unchecked", function(event){ if (network) { network.setOptions({physics:{enabled:false}}) }});
 
-    $('#edge-highlight-none').bind("change", function(event){ update(); });
-    $('#edge-highlight-bytes').bind("change", function(event){ update(); });
-    $('#edge-highlight-t-msgs').bind("change", function(event){ update(); });
-    $('#edge-highlight-z-msgs').bind("change", function(event){ update(); });
-    $('#edge-highlight-z-data').bind("change", function(event){ update(); });
-    $('#edge-highlight-z-query').bind("change", function(event){ update(); });
-    $('#edge-highlight-z-reply').bind("change", function(event){ update(); });
+    $('#stats-switch').jqxSwitchButton({checked:false, height: 25});
+    $('#stats-switch').bind("change", function(event){ update(); });
+    $("#edge_highlight").selectmenu({change: function( event, ui ) {update();}});
 })
 
 function initGraph() {
@@ -111,23 +105,13 @@ function updateNodes(zServices) {
 }
 
 function getHighlight(old_stats, new_stats, rate) {
-    if ($('#edge-highlight-bytes').is(':checked')) {
-        return [ (new_stats.tx_bytes - old_stats.tx_bytes) / rate, (new_stats.rx_bytes - old_stats.rx_bytes) / rate, " b/s" ];
-    }
-    if ($('#edge-highlight-t-msgs').is(':checked')) {
-        return [ (new_stats.tx_t_msgs - old_stats.tx_t_msgs) / rate, (new_stats.rx_t_msgs - old_stats.rx_t_msgs) / rate, " m/s" ];
-    }
-    if ($('#edge-highlight-z-msgs').is(':checked')) {
-        return [ (new_stats.tx_z_msgs - old_stats.tx_z_msgs) / rate, (new_stats.rx_z_msgs - old_stats.rx_z_msgs) / rate, " m/s" ];
-    }
-    if ($('#edge-highlight-z-data').is(':checked')) {
-        return [ (new_stats.tx_z_data_msgs - old_stats.tx_z_data_msgs) / rate, (new_stats.rx_z_data_msgs - old_stats.rx_z_data_msgs) / rate, " m/s" ];
-    }
-    if ($('#edge-highlight-z-query').is(':checked')) {
-        return [ (new_stats.tx_z_query_msgs - old_stats.tx_z_query_msgs) / rate, (new_stats.rx_z_query_msgs - old_stats.rx_z_query_msgs) / rate, " m/s" ];
-    }
-    if ($('#edge-highlight-z-reply').is(':checked')) {
-        return [ (new_stats.tx_z_data_reply_msgs - old_stats.tx_z_data_reply_msgs) / rate, (new_stats.rx_z_data_reply_msgs - old_stats.rx_z_data_reply_msgs) / rate, " m/s" ];
+    switch ($( "#edge_highlight" ).val()) {
+        case "Total bytes/s": return [ (new_stats.tx_bytes - old_stats.tx_bytes) / rate, (new_stats.rx_bytes - old_stats.rx_bytes) / rate, " b/s" ];
+        case "Total transport msgs/s": return [ (new_stats.tx_t_msgs - old_stats.tx_t_msgs) / rate, (new_stats.rx_t_msgs - old_stats.rx_t_msgs) / rate, " m/s" ];
+        case "Total zenoh msgs/s": return [ (new_stats.tx_z_msgs - old_stats.tx_z_msgs) / rate, (new_stats.rx_z_msgs - old_stats.rx_z_msgs) / rate, " m/s" ];
+        case "Total zenoh data/s": return [ (new_stats.tx_z_data_msgs - old_stats.tx_z_data_msgs) / rate, (new_stats.rx_z_data_msgs - old_stats.rx_z_data_msgs) / rate, " m/s" ];
+        case "Total zenoh query/s": return [ (new_stats.tx_z_query_msgs - old_stats.tx_z_query_msgs) / rate, (new_stats.rx_z_query_msgs - old_stats.rx_z_query_msgs) / rate, " m/s" ];
+        case "Total zenoh reply/s": return [ (new_stats.tx_z_data_reply_msgs - old_stats.tx_z_data_reply_msgs) / rate, (new_stats.rx_z_data_reply_msgs - old_stats.rx_z_data_reply_msgs) / rate, " m/s" ];
     }
 }
 
@@ -144,7 +128,7 @@ function updateEdges(zServices) {
             .map( function (session){ 
                 if ($('#stats-switch').val()) {
                     if (session.stats) {
-                        if ((!$('#edge-highlight-none').is(':checked')) && localStorage[zServices[id].pid + "_" + session.peer] && period > 0) {
+                        if (!($( "#edge_highlight" ).val() === "None") && localStorage[zServices[id].pid + "_" + session.peer] && period > 0) {
                             previous = JSON.parse(localStorage[zServices[id].pid + "_" + session.peer]);
                             const [tx_rate, rx_rate, unit] = getHighlight(previous, session.stats, period / 1000);
                             localStorage[zServices[id].pid + "_" + session.peer] = JSON.stringify(session.stats);
