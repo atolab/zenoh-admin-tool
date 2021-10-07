@@ -23,13 +23,13 @@ Make sure *npm* is installed.
 Install *electron* and *electron-builder*:
 
 ```bash
-$ npm install --save-dev electron electron-builder
+npm install --save-dev electron electron-builder
 ```
 
 Build:
 
 ```bash
-$ npm run build
+npm run build
 ```
 
 Find resulting app and packages in *dist* directory.
