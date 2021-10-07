@@ -15,9 +15,23 @@
 var routereditor;
 var charts = {};
 
+function getServer() {
+  let server = localStorage.getItem("Zenoh Administration Tool [server]");
+  if (!server) {
+    server = "http://localhost:8000";
+  }
+  return server;
+}
+
+function setServer(server) {
+  if (server) {
+    localStorage.setItem("Zenoh Administration Tool [server]", server);
+  }
+}
+
 function getHistory() {
   let hist = [];
-  let jsonHist = localStorage.getItem("Zenoh Administration Tool");
+  let jsonHist = localStorage.getItem("Zenoh Administration Tool [history]");
   if (jsonHist) {
     hist = JSON.parse(jsonHist);
   }
@@ -29,7 +43,7 @@ function updateHistory(zServices) {
   let now = new Date().getTime();
   hist.push([now, zServices]);
   let cleanHist = hist.filter(item => item[0] >= now - 10000);
-  localStorage.setItem("Zenoh Administration Tool", JSON.stringify(cleanHist));
+  localStorage.setItem("Zenoh Administration Tool [history]", JSON.stringify(cleanHist));
 }
 
 function getLastServices() {
@@ -526,11 +540,13 @@ $(document).ready(function () {
   initChart('edge-z-msgs-chart', 'zenoh msgs/s', 250);
 
   if (typeof $.url().param('url') === 'undefined') {
+    $("#connect-form-url").val(getServer());
     $("#connect-dialog").dialog('open');
     $("#main").addClass("w3-opacity-max");
     $("#main").css("pointer-events", "none");
     window.onhashchange();
   } else {
+    setServer($.url().param('url'));
     $("#router-address").html($.url().param('url'));
     $("#router-address").removeClass('w3-hide');
     $("#refresh").removeClass('w3-hide');
