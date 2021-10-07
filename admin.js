@@ -47,9 +47,7 @@ function updateHistory(zServices) {
 }
 
 function getLastServices() {
-  return getHistory().sort(function(a, b) {
-    return b[0] - a[0];
-  })[0][1];
+  return getHistory().sort((a, b) => b[0] - a[0])[0][1];
 }
 
 function getLastService(pid) {
@@ -91,6 +89,7 @@ function buildDataForRouter(pid1) {
       data[key].push([(time1 - now)/1000, time_data[key] / (time1 - time2) * 1000]);
     });
   }
+  Object.keys(data).forEach(key => data[key].sort((a, b)=> b[0] - a[0]));
   return data;
 }
 
@@ -123,6 +122,7 @@ function buildDataForSession(pid1, pid2) {
       });
     }
   }
+  Object.keys(data).forEach(key => data[key].sort((a, b)=> b[0] - a[0]));
   return data;
 }
 
