@@ -29,6 +29,7 @@
   <script src='deps/mustache.js/2.2.1/mustache.min.js'></script>
   <script src="deps/purl/2.3.1/purl.min.js"></script>
   <script src="deps/vis/4.21.0/vis.min.js"></script>
+  <script src="deps/toastui-chart/4.4.0/toastui-chart-no-anim.min.js"></script>
   <script src="admin.js"></script>
   <script src="graph.js"></script>
   <link rel="stylesheet" href="deps/jquery/ui/1.12.1/jquery-ui.css">
@@ -37,6 +38,7 @@
   <link rel="stylesheet" href="deps/w3css/w3-theme-blue.css">
   <link rel="stylesheet" href="deps/jsoneditor/7.0.4/jsoneditor.min.css">
   <link rel="stylesheet" href="deps/vis/4.21.0/vis.min.css"/>
+  <link rel="stylesheet" href="deps/toastui-chart/4.4.0/toastui-chart.min.css"/>
   <style type="text/css">
     html,body { height: 100%; margin: 0px; padding: 0px; height:100%; display:flex; flex-direction: column;}
     .jqx-splitter-collapse-button-vertical { display:none; }
@@ -93,9 +95,9 @@
       <div id="presentation-selector" style="display:block;">
         <div class="w3-show-inline-block w3-margin">
           <div class="w3-bar w3-round w3-border">
-            <button id="routers-list-btn" onclick="changeHash('LIST', $.url().attr('fragment').split(':')[1], $.url().attr('fragment').split(':')[2]);" class="w3-bar-item w3-button w3-theme-d1" style="width:120px"><i
+            <button id="routers-list-btn" onclick="changeHash('LIST', $.url().attr('fragment').split(':')[1], $.url().attr('fragment').split(':')[2], $.url().attr('fragment').split(':')[3]);" class="w3-bar-item w3-button w3-theme-d1" style="width:120px"><i
                 class="fa fa-bars"></i>&nbsp;list</button>
-            <button id="routers-graph-btn" onclick="changeHash('GRAPH', $.url().attr('fragment').split(':')[1], $.url().attr('fragment').split(':')[2]);"  class="w3-bar-item w3-button" style="width:120px"><i
+            <button id="routers-graph-btn" onclick="changeHash('GRAPH', $.url().attr('fragment').split(':')[1], $.url().attr('fragment').split(':')[2], $.url().attr('fragment').split(':')[3]);"  class="w3-bar-item w3-button" style="width:120px"><i
                 class="fas fa-project-diagram"></i>&nbsp;graph</button>
           </div>
         </div>
@@ -103,7 +105,7 @@
       <ul id="routers-list" class="w3-ul w3-hoverable w3-card-4" style="overflow-y:auto;">
       </ul>
       <script id="routers_list_item" type="x-tmpl-mustache">
-        <li id="{{pid}}" class="w3-bar" style="cursor:pointer" onclick="changeHash('LIST', '{{pid}}');">
+        <li id="{{pid}}" class="w3-bar" style="cursor:pointer" onclick="changeHash('LIST', 'router', '{{pid}}');">
           <div class="w3-bar-item w3-hide-small">
             <span class="w3-large">Router</span><br>
           </div>
@@ -116,7 +118,6 @@
       <div id="routers-graph" style="height:100%;display:none" class="w3-card w3-left">
         <div id="routers-graph-opts" class="w3-sidebar  w3-bar-block w3-theme-d1" style="width:35px">
           <a id="graph-config-button" title="configuration" class="w3-bar-item w3-large w3-padding-small" href="" onclick="return false;"><i class="fa fa-gear"></i></a>
-          <a id="graph-stats-button" title="statistics" class="w3-bar-item w3-large w3-padding-small" href="" onclick="return false;"><i class="fas fa-chart-bar"></i></a>
           <a id="graph-redraw-button" title="redraw" class="w3-bar-item w3-large w3-padding-small" href="" onclick="redraw();return false;"><i class="fa fa-refresh"></i></a>
         </div>
         <div id="routers-graph-panel" style="height:100%">
@@ -129,14 +130,6 @@
               <div class="w3-bar-item"><label>Physics:</label></div>
               <div class="w3-bar-item w3-right"><div id="physics-switch"></div></div>
             </div>
-          </div>
-          <div id="graph-stats-dropdown" class="w3-dropdown-content w3-border" style="margin-left:35px;margin-top:30px">
-            <div class="w3-bar w3-cell-bottom w3-border-bottom">
-              <div class="w3-bar">
-                <div class="w3-bar-item"><label>Statistics:</label></div>
-                <div class="w3-bar-item w3-right"><div id="stats-switch"></div></div>
-              </div>
-            </div>
             <div class="w3-bar w3-cell-bottom w3-border-bottom">
               <div class="w3-bar">
                 <div class="w3-bar-item"><label for="edge_highlight">Edge highlight:</label></div>
@@ -144,6 +137,8 @@
                   <select name="edge_highlight" id="edge_highlight">
                     <option value="None" selected>None</option>
                     <option value="Total bytes/s">Total bytes/s</option>
+                    <option value="Total data payload bytes/s">Total data payload bytes/s</option>
+                    <option value="Total reply payload bytes/s">Total reply payload bytes/s</option>
                     <option value="Total transport msgs/s">Total transport msgs/s</option>
                     <option value="Total zenoh msgs/s">Total zenoh msgs/s</option>
                     <option value="Total zenoh data/s">Total zenoh data/s</option>
@@ -160,7 +155,7 @@
       </div>
     </div>
 
-    <div id="side-panel" class="w3-card" style="box-sizing:border-box">
+    <div id="side-panel" class="w3-card" style="box-sizing:border-box;display:flex;flex-direction:column;">
       <div class="w3-bar w3-theme-d1">
         <button onclick="$('#main').jqxSplitter('collapse')" class="w3-bar-item w3-button w3-large">
           <i class="fa fa-close"></i>
@@ -168,18 +163,39 @@
         <div id="side-panel-title" class="w3-bar-item w3-large">
         </div>
       </div>
-      <div id="side-panel-tabs-empty" class="w3-padding-large w3-text-light-gray" style="width:100%;height:100%;">
-        <i class="fas fa-dragon " style="transform: scaleX(-1); width:100%; height:100%;"></i>
+      <div id="side-panel-empty" class="w3-padding-large w3-text-light-gray" style="width:100%;height:100%;">
+        <i class="fas fa-dragon " style="transform: scaleX(-1); width:100%;height:100%;"></i>
       </div>
-      <div id="side-panel-tabs" class="" style="display:none">
+      <div id="side-panel-edge" class="w3-padding-large" style="display:none;width:100%;height:100%;overflow-y:auto;flex-direction:column;">
+        <script id="side-panel-edge-template" type="x-tmpl-mustache">
+          Session<br/>
+          <div class="w3-bar">
+            <div class="w3-bar-item" style="padding:20px 0px 20px 0px;">
+              <a id="mirror_session" href="" onclick="changeHash($.url().attr('fragment').split(':')[0], 'edge', '{{subpid}}', '{{pid}}');return false;"><i class="fas fa-arrows-alt-v"></i></a><br/>
+            </div>
+            <div class="w3-bar-item">
+              {{pid}}<br/>{{subpid}}
+            </div>
+          </div>
+        </script>
+        <div id="edge-bytes-chart" style="width:100%">
+        </div>
+        <div id="edge-t-msgs-chart" style="width:100%">
+        </div>
+        <div id="edge-z-msgs-chart" style="width:100%">
+        </div>
+      </div>
+      <div id="side-panel-router" class="" style="display:none;width:100%;height:100%;flex-direction:column;">
         <ul>
           <li><a href="#side-panel-info-tab"><i class="fas fa-info-circle"></i> Info</a></li>
           <li><a href="#side-panel-storages-tab"><i class="fas fa-server"></i> Storages</a></li>
           <li><a href="#side-panel-clients-tab"><i class="fas fa-neuter" style="transform: scaleY(-1)"></i> Clients</a></li>
+          <li><a href="#side-panel-sessions-tab"><i class="fas fa-arrows-alt-h"></i> Sessions</a></li>
+          <li><a href="#side-panel-stats-tab"><i class="fas fa-chart-line"></i> Statistics</a></li>
         </ul>
-        <div id="side-panel-info-tab">
+        <div id="side-panel-info-tab" class="w3-padding-small" style="width:100%;height:100%;overflow-y:auto">
         </div>
-        <div id="side-panel-storages-tab">
+        <div id="side-panel-storages-tab" class="w3-padding-small" style="width:100%;height:100%;overflow-y:auto">
           <script id="backend_list_template" type="x-tmpl-mustache">
             <div id="backend_list" style="border:0 !important; padding:0 !important; margin:0 !important;"></div>
             <div id="load_backend_item" class="w3-card w3-round w3-section">
@@ -232,11 +248,11 @@
             </div>
           </script>
         </div>
-        <div id="side-panel-clients-tab">
-          <ul id="clients-list" class="w3-ul w3-hoverable w3-card-4" style="overflow-y:auto;">
+        <div id="side-panel-clients-tab" style="width:100%;height:100%;overflow-y:auto;padding-left:0;padding-right:0;">
+          <ul id="clients-list" class="w3-ul w3-hoverable w3-card-4">
           </ul>
           <script id="clients_list_item" type="x-tmpl-mustache">
-            <li id="{{subpid}}" class="w3-bar" style="cursor:pointer" onclick="changeHash($.url().attr('fragment').split(':')[0], '{{pid}}', '{{subpid}}');">
+            <li id="client_{{subpid}}" class="w3-bar" style="cursor:pointer" onclick="changeHash($.url().attr('fragment').split(':')[0], 'client', '{{pid}}', '{{subpid}}');">
               <div class="w3-bar-item w3-hide-small">
                 <span class="w3-large">Client</span><br>
               </div>
@@ -245,6 +261,29 @@
               </div>
             </li>
           </script>
+        </div>
+        <div id="side-panel-sessions-tab" style="width:100%;height:100%;overflow-y:auto;padding-left:0;padding-right:0;">
+          <ul id="sessions-list" class="w3-ul w3-hoverable w3-card-4">
+          </ul>
+          <script id="sessions_list_item" type="x-tmpl-mustache">
+            <li id="router_{{pid}}_session_{{subpid}}" class="w3-bar" style="cursor:pointer" onclick="changeHash($.url().attr('fragment').split(':')[0], 'edge', '{{pid}}', '{{subpid}}');">
+              <div class="w3-bar-item w3-hide-small">
+                <span class="w3-large">Session</span><br>
+              </div>
+              <div class="w3-bar-item">
+                <span>{{subpid}}</span><br>
+                <span class="w3-small">whatami: {{whatami}}</span>
+              </div>
+            </li>
+          </script>
+        </div>
+        <div id="side-panel-stats-tab" class="w3-padding-small" style="width:100%;height:100%;overflow-y:auto">
+          <div id="router-bytes-chart" style="width:100%">
+          </div>
+          <div id="router-t-msgs-chart" style="width:100%">
+          </div>
+          <div id="router-z-msgs-chart" style="width:100%">
+          </div>
         </div>
       </div>
     </div>

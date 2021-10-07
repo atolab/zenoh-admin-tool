@@ -13,6 +13,141 @@
  */
 
 var routereditor;
+var charts = {};
+
+function getHistory() {
+  let hist = [];
+  let jsonHist = localStorage.getItem("Zenoh Administration Tool");
+  if (jsonHist) {
+    hist = JSON.parse(jsonHist);
+  }
+  return hist;
+}
+
+function updateHistory(zServices) {
+  let hist = getHistory();
+  let now = new Date().getTime();
+  hist.push([now, zServices]);
+  let cleanHist = hist.filter(item => item[0] >= now - 10000);
+  localStorage.setItem("Zenoh Administration Tool", JSON.stringify(cleanHist));
+}
+
+function getLastServices() {
+  return getHistory().sort(function(a, b) {
+    return b[0] - a[0];
+  })[0][1];
+}
+
+function getLastService(pid) {
+  let lastServices = getLastServices();
+  if (lastServices) {
+    return lastServices.find(srv => srv.key === "/@/router/" + pid);
+  } else {
+    return undefined;
+  }
+}
+
+function buildDataForRouter(pid1) {
+  let data = {};
+  let now = new Date().getTime();
+  let hist = getHistory();
+  for( let i = 0; i < hist.length - 1; i++){
+    let time_data = {};
+    let time1 = hist[i][0];
+    let time2 = hist[i + 1][0];
+    let zServices1 = transform(hist[i][1]);
+    let zServices2 = transform(hist[i + 1][1]);
+    zServices1["/@/router/" + pid1].sessions.forEach(function(session1, idx) {
+      let session2 = zServices2["/@/router/" + pid1].sessions.find(session => session.peer === session1.peer);
+      if (session2) {
+        Object.keys(session1.stats).filter(key => key.startsWith("tx_")).forEach(function (txkey, idx) {
+          let rxkey = txkey.replace("tx_", "rx_");
+          if (session1.stats.hasOwnProperty(txkey) && session1.stats.hasOwnProperty(rxkey) && session2.stats.hasOwnProperty(txkey) && session2.stats.hasOwnProperty(rxkey)) {
+            if (!time_data[txkey]) {time_data[txkey] = 0;}
+            if (!time_data[rxkey]) {time_data[rxkey] = 0;}
+            time_data[txkey] += (session1.stats[txkey] - session2.stats[txkey]);
+            time_data[rxkey] += (session1.stats[rxkey] - session2.stats[rxkey]);
+          }
+
+        });
+      }
+    });
+    Object.keys(time_data).forEach(function (key, idx) {
+      if (!data[key]) {data[key] = [];}
+      data[key].push([(time1 - now)/1000, time_data[key] / (time1 - time2) * 1000]);
+    });
+  }
+  return data;
+}
+
+function buildDataForSession(pid1, pid2) {
+  let data = {};
+  let now = new Date().getTime();
+  let hist = getHistory();
+  for( let i = 0; i < hist.length - 1; i++){
+    let time1 = hist[i][0];
+    let time2 = hist[i + 1][0];
+    let zServices1 = transform(hist[i][1]);
+    let zServices2 = transform(hist[i + 1][1]);
+    let session1 = zServices1["/@/router/" + pid1].sessions.find(session => session.peer === pid2);
+    let session2 = zServices2["/@/router/" + pid1].sessions.find(session => session.peer === pid2);
+    if (session1 && session1.stats && session2 && session2.stats) {
+      Object.keys(session1.stats).filter(key => key.startsWith("tx_")).forEach(function (txkey, idx) {
+        let rxkey = txkey.replace("tx_", "rx_");
+        let ttkey = txkey.replace("tx_", "tt_");
+        if (session1.stats.hasOwnProperty(txkey) && session1.stats.hasOwnProperty(rxkey) && session2.stats.hasOwnProperty(txkey) && session2.stats.hasOwnProperty(rxkey)) {
+          if (!data[txkey]) {data[txkey] = [];}
+          if (!data[rxkey]) {data[rxkey] = [];}
+          // if (!data[ttkey]) {data[ttkey] = [];}
+          data[txkey].push([(time1 - now)/1000, 
+            (session1.stats[txkey] - session2.stats[txkey]) / (time1 - time2) * 1000]);
+          data[rxkey].push([(time1 - now)/1000, 
+            (session1.stats[rxkey] - session2.stats[rxkey]) / (time1 - time2) * 1000]);
+          // data[ttkey].push([(time1 - now)/1000, 
+          //   (session1.stats[txkey] + session1.stats[rxkey] - session2.stats[txkey] - session2.stats[rxkey]) / (time1 - time2) * 1000]);
+        }
+      });
+    }
+  }
+  return data;
+}
+
+function initChart(id, title,  height) {
+  charts[id] = toastui.Chart.lineChart({ 
+    el: document.getElementById(id), 
+    data: {series: [],}, 
+    options: {
+      chart: { title, width: 'auto', height, animation: false },
+      yAxis: {scale: {min:0}},
+      tooltip: {template: (model, defaultTooltipTemplate, theme) => {return ``;}},
+      exportMenu: {visible: false},
+      responsive: {animation: false},
+      theme: {legend: {label: {fontSize: 13}}},
+    },
+  });
+}
+
+function updateChart(chart, data, series) {
+  let useries = series
+    .filter(serie => data[serie.name])
+    .map(serie => {
+      let s_data = chart.store.state.legend.data.find(data => data.label === serie.name);
+      serie.checked = s_data?s_data.checked:undefined;
+      return serie;
+    });
+  chart.setData({series: useries.map(serie => {return {name: serie.name, data: data[serie.name]}})});
+  useries.forEach(serie => {
+    let s_data = chart.store.state.legend.data.find(data => data.label === serie.name);
+    if (s_data) {
+      s_data.viewLabel = Math.floor(data[serie.name][0][1]) + ' ' + serie.name + '/s';
+      if (!(serie.checked === undefined)) {
+        s_data.checked = serie.checked;
+      } else if (!serie.default) {
+        chart.eventBus.emit('clickLegendCheckbox', [{label: serie.name, checked: true}]);
+      }
+    }
+  });
+}
 
 function failure() {
   $("#connection_status").removeClass("w3-theme-l3");
@@ -44,39 +179,96 @@ function showListPanel() {
   $("#routers-list-btn").addClass("w3-theme-d1");
 }
 
-function selectProcess(pid, subpid) {
+function selectProcess(type, pid, subpid) {
   $("#routers-list").children().removeClass("w3-theme-d1");
-  updateSidePanel(pid, subpid);
-  if (subpid) {
-    selectNode(subpid);
-  } else {
-    $("#" + pid).addClass("w3-theme-d1");
-    selectNode(pid);
+  switch (type) {
+    case 'router': 
+      $("#" + pid).addClass("w3-theme-d1");
+      selectNode(pid);
+      break;
+    case 'client':             
+      if ($('#clients-switch').val()) {
+        selectNode(subpid);
+      } else {
+        selectNode();
+      }
+      break;
+    case 'edge': 
+      selectEdge(pid, subpid);
+      break;
   }
+  updateSidePanel(type, pid, subpid);
 }
 
-function updateSidePanel(pid, subpid) {
-  if (pid) {
-    if (subpid) {
-      $("#side-panel-title").html("Client " + subpid);
-      $("#side-panel-tabs").css("display", "none");
-      $("#side-panel-tabs-empty").css("display", "block");
-    } else {
-      $("#side-panel-title").html("Router " + pid);
-      $("#side-panel-tabs").css("display", "block");
-      $("#side-panel-tabs-empty").css("display", "none");
-      updateStoragesPanel(pid);
-      $.getJSON($.url().param('url') + "/@/router/" + pid, zRouter => {
-        if (zRouter[0].value) {
-          routereditor.update(zRouter[0].value);
-          updateClientsPanel(zRouter[0].value);
+function updateSidePanel(type, pid, subpid) {
+  if (type && pid) {
+    switch (type) {
+      case 'router':
+        $("#side-panel-title").html("Router " + pid);
+        $("#side-panel-empty").css("display", "none");
+        $("#side-panel-router").css("display", "flex");
+        $("#side-panel-edge").css("display", "none");
+        let lastService = undefined;
+        switch ($("#side-panel-router").tabs('option', 'active')) {
+          case 0: 
+            lastService = getLastService(pid);
+            if (lastService) {routereditor.update(lastService.value);}
+            break;
+          case 1: updateStoragesPanel(pid);break;
+          case 2: 
+            lastService = getLastService(pid);
+            if (lastService) {updateClientsPanel(lastService.value);}
+            break;
+          case 3: 
+          lastService = getLastService(pid);
+          if (lastService) {updateSessionsPanel(lastService.value);}
+          break;
+            break;
+          case 4: updateRouterStatsPanel(pid);break;
         }
-      }).fail(function () { failure(); });
+        break;
+      case 'client':
+        $("#side-panel-title").html("Client " + subpid);
+        $("#side-panel-empty").css("display", "block");
+        $("#side-panel-router").css("display", "none");
+        $("#side-panel-edge").css("display", "none");
+        break;
+      case 'edge':
+        $("#side-panel-title").html(Mustache.render($('#side-panel-edge-template').html(), { pid, subpid }));
+        $("#side-panel-empty").css("display", "none");
+        $("#side-panel-router").css("display", "none");
+        $("#side-panel-edge").css("display", "flex");
+
+        let data = buildDataForSession(pid, subpid);
+        updateChart(charts['edge-bytes-chart'], data, [
+          {name: 'tx_bytes', default:true},
+          {name: 'rx_bytes', default:true},
+          {name: 'tx_z_data_payload_bytes', default:false},
+          {name: 'rx_z_data_payload_bytes', default:false},
+          {name: 'tx_z_data_reply_payload_bytes', default:false},
+          {name: 'rx_z_data_reply_payload_bytes', default:false},
+        ]);
+        updateChart(charts['edge-t-msgs-chart'], data, [
+          {name: 'tx_t_msgs', default:true},
+          {name: 'rx_t_msgs', default:true},
+        ]);
+        updateChart(charts['edge-z-msgs-chart'], data, [
+          {name: 'tx_z_msgs', default:true},
+          {name: 'rx_z_msgs', default:true},
+          {name: 'tx_z_data_msgs', default:true},
+          {name: 'rx_z_data_msgs', default:true},
+          {name: 'tx_z_query_msgs', default:false},
+          {name: 'rx_z_query_msgs', default:false},
+          {name: 'tx_z_data_reply_msgs', default:false},
+          {name: 'rx_z_data_reply_msgs', default:false},
+        ]);
+        break;
     }
   } else {
     $("#side-panel-title").html("");
-    $("#side-panel-tabs").css("display", "none");
-    $("#side-panel-tabs-empty").css("display", "block");
+    $("#side-panel-empty").css("display", "block");
+    $("#side-panel-router").css("display", "none");
+    $("#side-panel-edge").css("display", "none");
   }
 }
 
@@ -163,14 +355,57 @@ function updateBackendPanel(pid, backend) {
 
 function updateClientsPanel(zRouter) {
   zRouter.sessions.sort(function(a, b) {return a.peer.localeCompare(b.peer);});
-  $("#clients-list").html(
-    zRouter.sessions
-      .filter(session => session.whatami === "client")
-      .map(session => Mustache.render(
+  let clients = zRouter.sessions.filter(session => session.whatami === "client");
+  if (clients.length) {
+    $("#clients-list").html(
+      clients.map(session => Mustache.render(
         $('#clients_list_item').html(),
         { pid: zRouter.pid, subpid: session.peer }
       ))
-  );
+    );
+  } else {
+    $("#clients-list").html("<li class='w3-center'>no clients</li>");
+  }
+}
+
+function updateSessionsPanel(zRouter) {
+  zRouter.sessions.sort(function(a, b) {return a.peer.localeCompare(b.peer);});
+  if (zRouter.sessions.length) {
+    $("#sessions-list").html(
+      zRouter.sessions.map(session => Mustache.render(
+        $('#sessions_list_item').html(),
+        { pid: zRouter.pid, subpid: session.peer, whatami: session.whatami }
+      ))
+    );
+  } else {
+    $("#sessions-list").html("<li class='w3-center'>no sessions</li>");
+  }
+}
+
+function updateRouterStatsPanel(pid) {
+  let router_data = buildDataForRouter(pid);
+  updateChart(charts['router-bytes-chart'], router_data, [
+    {name: 'tx_bytes', default:true},
+    {name: 'rx_bytes', default:true},
+    {name: 'tx_z_data_payload_bytes', default:false},
+    {name: 'rx_z_data_payload_bytes', default:false},
+    {name: 'tx_z_data_reply_payload_bytes', default:false},
+    {name: 'rx_z_data_reply_payload_bytes', default:false},
+  ]);
+  updateChart(charts['router-t-msgs-chart'], router_data, [
+    {name: 'tx_t_msgs', default:true},
+    {name: 'rx_t_msgs', default:true},
+  ]);
+  updateChart(charts['router-z-msgs-chart'], router_data, [
+    {name: 'tx_z_msgs', default:true},
+    {name: 'rx_z_msgs', default:true},
+    {name: 'tx_z_data_msgs', default:true},
+    {name: 'rx_z_data_msgs', default:true},
+    {name: 'tx_z_query_msgs', default:false},
+    {name: 'rx_z_query_msgs', default:false},
+    {name: 'tx_z_data_reply_msgs', default:false},
+    {name: 'rx_z_data_reply_msgs', default:false},
+  ]);
 }
 
 function deleteStorage(sto) {
@@ -195,12 +430,16 @@ function createStorage(pid, backend, name, properties) {
   }).fail(function () { failure(); });
 }
 
-function changeHash(view, pid, subpid) {
-  if (pid) {
-    if (subpid) {
-      location.href='#' + view + ':' + pid + ':' + subpid;
+function changeHash(view, type, pid, subpid) {
+  if (type) {
+    if (pid) {
+      if (subpid) {
+        location.href='#' + view + ':' + type + ':' + pid + ':' + subpid;
+      } else {
+        location.href='#' + view + ':' + type + ':' + pid;
+      }
     } else {
-      location.href='#' + view + ':' + pid;
+      location.href='#' + view + ':' + type;
     }
   } else {
     location.href='#' + view + ':';
@@ -220,10 +459,11 @@ function updateList(zServices) {
 function update(schedule) {
   $.getJSON($.url().param('url') + "/@/router/*", zServices => {
     try {
+      updateHistory(zServices);
       cleanFailure();
       updateList(zServices);
       updateGraph(transform(zServices));
-      let pid = $.url().attr('fragment').split(':')[1];
+      let pid = $.url().attr('fragment').split(':')[2];
       if (pid && !zServices.some(srv => srv.value.pid == pid)) {
         changeHash($.url().attr('fragment').split(':')[0]);
       } else {
@@ -276,6 +516,15 @@ $(document).ready(function () {
     event.owner.splitBarButton.css("top", "0");
     event.owner.splitBarButton.html("<i class='fas fa-angle-left w3-display-middle'>");
   });
+
+  initChart('router-bytes-chart', 'total bytes/s', 300);
+  initChart('router-t-msgs-chart', 'transport msgs/s', 200);
+  initChart('router-z-msgs-chart', 'zenoh msgs/s', 250);
+
+  initChart('edge-bytes-chart', 'total bytes/s', 300);
+  initChart('edge-t-msgs-chart', 'transport msgs/s', 200);
+  initChart('edge-z-msgs-chart', 'zenoh msgs/s', 250);
+
   if (typeof $.url().param('url') === 'undefined') {
     $("#connect-dialog").dialog('open');
     $("#main").addClass("w3-opacity-max");
@@ -286,7 +535,9 @@ $(document).ready(function () {
     $("#router-address").removeClass('w3-hide');
     $("#refresh").removeClass('w3-hide');
 
-    $("#side-panel-tabs").tabs();
+    $("#side-panel-router").tabs({
+      activate: function( event, ui ) {window.onhashchange();}
+    });
 
     routereditor = new JSONEditor($('#side-panel-info-tab')[0], { mode: 'view' });
 
@@ -294,7 +545,7 @@ $(document).ready(function () {
   }
 })
 
-window.onhashchange = function () {
+window.onhashchange = function () {  
   split = $.url().attr('fragment').split(':');
   if (split[0] == "GRAPH") {
     showGraphPanel();
@@ -302,6 +553,5 @@ window.onhashchange = function () {
   } else {
     showListPanel();
   }
-  selectProcess(split[1], split[2]);
+  selectProcess(split[1], split[2], split[3]);
 }
-
