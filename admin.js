@@ -248,7 +248,11 @@ function updateSidePanel(type, pid, subpid) {
         $("#side-panel-edge").css("display", "none");
         break;
       case 'edge':
-        $("#side-panel-title").html(Mustache.render($('#side-panel-edge-template').html(), { pid, subpid }));
+        $("#side-panel-title").html(Mustache.render($('#side-panel-edge-header-template').html(), { pid, subpid }));
+        let node = getNode(subpid);
+        if (!(node && node.type === "router")) {
+          $("#mirror_session").addClass("w3-hide");
+        }
         $("#side-panel-empty").css("display", "none");
         $("#side-panel-router").css("display", "none");
         $("#side-panel-edge").css("display", "flex");

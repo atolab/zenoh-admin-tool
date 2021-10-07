@@ -55,6 +55,10 @@ function initGraph() {
     }
 }
 
+function getNode(pid) {
+    return nodes.get(pid)
+}
+
 function selectNode(pid) {
     if (network && network_data) {
         if (pid && nodes.get(pid)) {
@@ -178,7 +182,12 @@ function showDetails() {
             changeHash('GRAPH', 'router', network.getSelectedNodes()[0]);
         }
     } else if(network && network.getSelectedEdges()[0]) {
-        changeHash('GRAPH', 'edge', network.getSelectedEdges()[0].split('_')[0], network.getSelectedEdges()[0].split('_')[1]);
+        let node = getNode(network.getSelectedEdges()[0].split('_')[0]);
+        if (node && node.type === "router") {
+            changeHash('GRAPH', 'edge', network.getSelectedEdges()[0].split('_')[0], network.getSelectedEdges()[0].split('_')[1]);
+        } else {
+            changeHash('GRAPH', 'edge', network.getSelectedEdges()[0].split('_')[1], network.getSelectedEdges()[0].split('_')[0]);
+        }
     } else {
         changeHash('GRAPH');
     }
