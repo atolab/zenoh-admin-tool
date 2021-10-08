@@ -69,25 +69,40 @@ function buildDataForRouter(pid1) {
     let time2 = hist[i + 1][0];
     let zServices1 = transform(hist[i][1]);
     let zServices2 = transform(hist[i + 1][1]);
-    zServices1["/@/router/" + pid1].sessions.forEach(function(session1, idx) {
-      let session2 = zServices2["/@/router/" + pid1].sessions.find(session => session.peer === session1.peer);
-      if (session2) {
-        Object.keys(session1.stats).filter(key => key.startsWith("tx_")).forEach(function (txkey, idx) {
-          let rxkey = txkey.replace("tx_", "rx_");
-          if (session1.stats.hasOwnProperty(txkey) && session1.stats.hasOwnProperty(rxkey) && session2.stats.hasOwnProperty(txkey) && session2.stats.hasOwnProperty(rxkey)) {
-            if (!time_data[txkey]) {time_data[txkey] = 0;}
-            if (!time_data[rxkey]) {time_data[rxkey] = 0;}
-            time_data[txkey] += (session1.stats[txkey] - session2.stats[txkey]);
-            time_data[rxkey] += (session1.stats[rxkey] - session2.stats[rxkey]);
-          }
-
-        });
-      }
-    });
-    Object.keys(time_data).forEach(function (key, idx) {
-      if (!data[key]) {data[key] = [];}
-      data[key].push([(time1 - now)/1000, time_data[key] / (time1 - time2) * 1000]);
-    });
+    if (zServices1["/@/router/" + pid1].sessions.length) {
+      zServices1["/@/router/" + pid1].sessions.forEach(function(session1, idx) {
+        let session2 = zServices2["/@/router/" + pid1].sessions.find(session => session.peer === session1.peer);
+        if (session1.stats && session2 && session2.stats) {
+          Object.keys(session1.stats).filter(key => key.startsWith("tx_")).forEach(function (txkey, idx) {
+            let rxkey = txkey.replace("tx_", "rx_");
+            if (session1.stats.hasOwnProperty(txkey) && session1.stats.hasOwnProperty(rxkey) && session2.stats.hasOwnProperty(txkey) && session2.stats.hasOwnProperty(rxkey)) {
+              if (!time_data[txkey]) {time_data[txkey] = 0;}
+              if (!time_data[rxkey]) {time_data[rxkey] = 0;}
+              time_data[txkey] += (session1.stats[txkey] - session2.stats[txkey]);
+              time_data[rxkey] += (session1.stats[rxkey] - session2.stats[rxkey]);
+            }
+  
+          });
+        }
+      });
+      Object.keys(time_data).forEach(function (key, idx) {
+        if (!data[key]) {data[key] = [];}
+        data[key].push([(time1 - now)/1000, time_data[key] / (time1 - time2) * 1000]);
+      });
+    } else {
+      if (!data['tx_bytes']) {data['tx_bytes'] = [];}
+      data['tx_bytes'].push([(time1 - now)/1000, 0]);
+      if (!data['rx_bytes']) {data['rx_bytes'] = [];}
+      data['rx_bytes'].push([(time1 - now)/1000, 0]);
+      if (!data['tx_t_msgs']) {data['tx_t_msgs'] = [];}
+      data['tx_t_msgs'].push([(time1 - now)/1000, 0]);
+      if (!data['rx_t_msgs']) {data['rx_t_msgs'] = [];}
+      data['rx_t_msgs'].push([(time1 - now)/1000, 0]);
+      if (!data['tx_z_msgs']) {data['tx_z_msgs'] = [];}
+      data['tx_z_msgs'].push([(time1 - now)/1000, 0]);
+      if (!data['rx_z_msgs']) {data['rx_z_msgs'] = [];}
+      data['rx_z_msgs'].push([(time1 - now)/1000, 0]);
+    }
   }
   Object.keys(data).forEach(key => data[key].sort((a, b)=> b[0] - a[0]));
   return data;
@@ -258,6 +273,11 @@ function updateSidePanel(type, pid, subpid) {
         $("#side-panel-edge").css("display", "flex");
 
         let data = buildDataForSession(pid, subpid);
+        if (!Object.keys(data).length) {
+          $("#edge-no-stats").removeClass("w3-hide");
+        } else {
+          $("#edge-no-stats").addClass("w3-hide");
+        }
         updateChart(charts['edge-bytes-chart'], data, [
           {name: 'tx_bytes', default:true},
           {name: 'rx_bytes', default:true},
@@ -402,6 +422,11 @@ function updateSessionsPanel(zRouter) {
 
 function updateRouterStatsPanel(pid) {
   let router_data = buildDataForRouter(pid);
+  if (!Object.keys(router_data).length) {
+    $("#router-no-stats").removeClass("w3-hide");
+  } else {
+    $("#router-no-stats").addClass("w3-hide");
+  }
   updateChart(charts['router-bytes-chart'], router_data, [
     {name: 'tx_bytes', default:true},
     {name: 'rx_bytes', default:true},
