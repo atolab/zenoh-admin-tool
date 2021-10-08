@@ -200,7 +200,8 @@ function resetGraph(){
 }
 
 function redraw() {
-    $.getJSON($.url().param('url') + "/@/router/*", zServices => {
+    let query = $('#stats-switch').val()?"?(stats=true)":"";
+    $.getJSON($.url().param('url') + "/@/router/*" + query, zServices => {
         updateHistory(zServices);
         resetGraph();
         updateGraph(transform(zServices));

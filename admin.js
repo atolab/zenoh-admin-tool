@@ -500,7 +500,8 @@ function updateList(zServices) {
 }
 
 function update(schedule) {
-  $.getJSON($.url().param('url') + "/@/router/*", zServices => {
+  let query = $('#stats-switch').val()?"?(stats=true)":"";
+  $.getJSON($.url().param('url') + "/@/router/*" + query, zServices => {
     try {
       updateHistory(zServices);
       cleanFailure();
@@ -538,6 +539,7 @@ $(document).ready(function () {
   $("#connect-dialog").dialog({ autoOpen: false });
   $('#autorefresh-switch').jqxSwitchButton({checked:true, height: 30});
   $('#autorefresh-switch').bind("checked", function(event){ if (typeof $.url().param('url') !== 'undefined') { periodicUpdate(); } });
+  $('#stats-switch').jqxSwitchButton({checked:true, height: 30});
   $('#autorefresh-period').spinner({min: 100, step: 10});
   $('#main').jqxSplitter({ width: '100%', height: '100%', panels: [{ size: '60%', min: '20%', collapsible: false }, { size: '40%', min: '0%'}]});
   $('#main').on('expanded', function (event) {
