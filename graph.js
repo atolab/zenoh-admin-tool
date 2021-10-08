@@ -72,7 +72,7 @@ function selectNode(pid) {
 function selectEdge(pid1, pid2) {
     if (network) {
         network.selectNodes([], false);
-        network.selectEdges([linkId(pid1, pid2)]);
+        try{ network.selectEdges([linkId(pid1, pid2)]); } catch(err) {}
     }
 }
 
