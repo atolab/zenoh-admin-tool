@@ -157,7 +157,7 @@
     </div>
 
     <div id="side-panel" class="w3-card" style="box-sizing:border-box;display:flex;flex-direction:column;">
-      <div class="w3-bar w3-theme-d1">
+      <div class="w3-bar w3-theme-d1" style="flex-shrink:0;">
         <button onclick="$('#main').jqxSplitter('collapse')" class="w3-bar-item w3-button w3-large">
           <i class="fa fa-close"></i>
         </button>
@@ -198,9 +198,9 @@
           <li><a href="#side-panel-sessions-tab"><i class="fas fa-arrows-alt-h"></i> Sessions</a></li>
           <li><a href="#side-panel-stats-tab"><i class="fas fa-chart-line"></i> Statistics</a></li>
         </ul>
-        <div id="side-panel-info-tab" class="w3-padding-small" style="width:100%;height:100%;overflow-y:auto">
+        <div id="side-panel-info-tab" class="w3-padding-small" style="width:100%;height:100%;overflow-y:auto;margin-bottom:30px;">
         </div>
-        <div id="side-panel-storages-tab" class="w3-padding-small" style="width:100%;height:100%;overflow-y:auto">
+        <div id="side-panel-storages-tab" class="w3-padding-small" style="width:100%;height:100%;overflow-y:auto;margin-bottom:30px;">
           <script id="backend_list_template" type="x-tmpl-mustache">
             <div id="backend_list" style="border:0 !important; padding:0 !important; margin:0 !important;"></div>
             <div id="load_backend_item" class="w3-card w3-round w3-section">
@@ -253,7 +253,7 @@
             </div>
           </script>
         </div>
-        <div id="side-panel-clients-tab" style="width:100%;height:100%;overflow-y:auto;padding-left:0;padding-right:0;">
+        <div id="side-panel-clients-tab" style="width:100%;height:100%;overflow-y:auto;padding-left:0;padding-right:0;margin-bottom:30px;">
           <ul id="clients-list" class="w3-ul w3-hoverable w3-card-4">
           </ul>
           <script id="clients_list_item" type="x-tmpl-mustache">
@@ -267,7 +267,7 @@
             </li>
           </script>
         </div>
-        <div id="side-panel-sessions-tab" style="width:100%;height:100%;overflow-y:auto;padding-left:0;padding-right:0;">
+        <div id="side-panel-sessions-tab" style="width:100%;height:100%;overflow-y:auto;padding-left:0;padding-right:0;margin-bottom:30px;">
           <ul id="sessions-list" class="w3-ul w3-hoverable w3-card-4">
           </ul>
           <script id="sessions_list_item" type="x-tmpl-mustache">
@@ -282,7 +282,7 @@
             </li>
           </script>
         </div>
-        <div id="side-panel-stats-tab" style="width:100%;height:100%;overflow-y:auto;padding-left:0;padding-right:0;">
+        <div id="side-panel-stats-tab" style="width:100%;height:100%;overflow-y:auto;padding-left:0;padding-right:0;margin-bottom:30px;">
           <div id="router-no-stats" class="w3-orange w3-center w3-large w3-padding-small w3-hide">
             No data available!<br/>
             Maybe the zenoh router has not been built with the "stats" feature.
