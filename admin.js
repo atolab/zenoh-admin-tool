@@ -117,24 +117,26 @@ function buildDataForSession(pid1, pid2) {
     let time2 = hist[i + 1][0];
     let zServices1 = transform(hist[i][1]);
     let zServices2 = transform(hist[i + 1][1]);
-    let session1 = zServices1["/@/router/" + pid1].sessions.find(session => session.peer === pid2);
-    let session2 = zServices2["/@/router/" + pid1].sessions.find(session => session.peer === pid2);
-    if (session1 && session1.stats && session2 && session2.stats) {
-      Object.keys(session1.stats).filter(key => key.startsWith("tx_")).forEach(function (txkey, idx) {
-        let rxkey = txkey.replace("tx_", "rx_");
-        let ttkey = txkey.replace("tx_", "tt_");
-        if (session1.stats.hasOwnProperty(txkey) && session1.stats.hasOwnProperty(rxkey) && session2.stats.hasOwnProperty(txkey) && session2.stats.hasOwnProperty(rxkey)) {
-          if (!data[txkey]) {data[txkey] = [];}
-          if (!data[rxkey]) {data[rxkey] = [];}
-          // if (!data[ttkey]) {data[ttkey] = [];}
-          data[txkey].push([(time1 - now)/1000, 
-            (session1.stats[txkey] - session2.stats[txkey]) / (time1 - time2) * 1000]);
-          data[rxkey].push([(time1 - now)/1000, 
-            (session1.stats[rxkey] - session2.stats[rxkey]) / (time1 - time2) * 1000]);
-          // data[ttkey].push([(time1 - now)/1000, 
-          //   (session1.stats[txkey] + session1.stats[rxkey] - session2.stats[txkey] - session2.stats[rxkey]) / (time1 - time2) * 1000]);
-        }
-      });
+    if (zServices1["/@/router/" + pid1] && zServices2["/@/router/" + pid1]) {
+      let session1 = zServices1["/@/router/" + pid1].sessions.find(session => session.peer === pid2);
+      let session2 = zServices2["/@/router/" + pid1].sessions.find(session => session.peer === pid2);
+      if (session1 && session1.stats && session2 && session2.stats) {
+        Object.keys(session1.stats).filter(key => key.startsWith("tx_")).forEach(function (txkey, idx) {
+          let rxkey = txkey.replace("tx_", "rx_");
+          let ttkey = txkey.replace("tx_", "tt_");
+          if (session1.stats.hasOwnProperty(txkey) && session1.stats.hasOwnProperty(rxkey) && session2.stats.hasOwnProperty(txkey) && session2.stats.hasOwnProperty(rxkey)) {
+            if (!data[txkey]) {data[txkey] = [];}
+            if (!data[rxkey]) {data[rxkey] = [];}
+            // if (!data[ttkey]) {data[ttkey] = [];}
+            data[txkey].push([(time1 - now)/1000, 
+              (session1.stats[txkey] - session2.stats[txkey]) / (time1 - time2) * 1000]);
+            data[rxkey].push([(time1 - now)/1000, 
+              (session1.stats[rxkey] - session2.stats[rxkey]) / (time1 - time2) * 1000]);
+            // data[ttkey].push([(time1 - now)/1000, 
+            //   (session1.stats[txkey] + session1.stats[rxkey] - session2.stats[txkey] - session2.stats[rxkey]) / (time1 - time2) * 1000]);
+          }
+        });
+      }
     }
   }
   Object.keys(data).forEach(key => data[key].sort((a, b)=> b[0] - a[0]));
