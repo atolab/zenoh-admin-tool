@@ -321,7 +321,7 @@ function updateStoragesPanel(pid) {
   $("#load_backend").off("submit");
   $("#load_backend").on("submit", function (event) {
     $.ajax({
-      url: $.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + $('#load_backend_name').val(),
+      url: $.url().param('url') + "/@/router/" + pid + "/status/plugins/storages/backends/" + $('#load_backend_name').val(),
       type: 'PUT',
       headers: { "content-type": "application/properties" },
       data: $('#load_backend_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""),
@@ -331,7 +331,7 @@ function updateStoragesPanel(pid) {
     }).fail(function () { failure(); });
     event.preventDefault();
   });
-  $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/*", zBackends => {
+  $.getJSON($.url().param('url') + "/@/router/" + pid + "/status/plugins/storages/backends/*", zBackends => {
     $("#backend_list").children().filter(function(){
       return !zBackends.some(be => "backend_" + be.key.split('/').reverse()[0] == $(this).attr('id'));
     }).remove();
@@ -360,7 +360,7 @@ function updateBackendPanel(pid, backend) {
       ' path_expr=' + $('#create_' + backend + '_storage_path').val() + ';'
       + $('#create_' + backend + '_storage_props').val().replace(/(?:\r\n|\r|\n)/g, ';').replace(/\s/g, ""));
   });
-  $.getJSON($.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/*", zStorages => {
+  $.getJSON($.url().param('url') + "/@/router/" + pid + "/status/plugins/storages/backends/" + backend + "/storages/*", zStorages => {
     $("#backend_" + backend + "_storage_list").children().filter(function(){
       return !zStorages.some(sto => "backend_" + backend + "_storage_" + sto.key.split('/').reverse()[0] == $(this).attr('id'));
     }).remove();
@@ -380,7 +380,7 @@ function updateBackendPanel(pid, backend) {
           icons: false,
         });
       }
-      $("#backend_" + backend + "_storage_" + sto_name + "_path_expr").html(sto.value.path_expr);
+      $("#backend_" + backend + "_storage_" + sto_name + "_key_expr").html(sto.value.key_expr);
       $("#backend_" + backend + "_storage_" + sto_name + "_properties").html(JSON.stringify(sto.value)
         .replaceAll("{", "")
         .replaceAll("}", "")
@@ -465,7 +465,7 @@ function deleteStorage(sto) {
 
 function createStorage(pid, backend, name, properties) {
   $.ajax({
-    url: $.url().param('url') + "/@/router/" + pid + "/plugin/storages/backend/" + backend + "/storage/" + name,
+    url: $.url().param('url') + "/@/router/" + pid + "/status/plugins/storages/backends/" + backend + "/storages/" + name,
     type: 'PUT',
     headers: { "content-type": "application/properties" },
     data: properties,
